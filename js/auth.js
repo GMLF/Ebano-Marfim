@@ -80,6 +80,7 @@
     const session = await getSession();
     if (!session) return false;
     const { data, error } = await client.rpc('is_admin');
+    console.log('[isAdmin debug]', { data, error, uid: session.user.id, email: session.user.email });
     return !error && data === true;
   }
   async function getAllOrders() {
