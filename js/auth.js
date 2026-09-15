@@ -80,8 +80,12 @@
     const session = await getSession();
     if (!session) return false;
     const { data, error } = await client.rpc('is_admin');
-    console.log('[isAdmin debug]', { data, error, uid: session.user.id, email: session.user.email });
     return !error && data === true;
+  }
+  async function getTopCustomers() {
+    if (!client) return [];
+    const { data, error } = await client.rpc('admin_top_customers');
+    return error ? [] : data;
   }
   async function getAllOrders() {
     if (!client) return [];
@@ -122,7 +126,7 @@
   window.emAuth = {
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
-    saveOrder, getOrders, isAdmin, getAllOrders, getAnalyticsEvents, logEvent
+    saveOrder, getOrders, isAdmin, getAllOrders, getAnalyticsEvents, logEvent, getTopCustomers
   };
 
   /* reflete o estado de login no ícone de conta do cabeçalho, em todas as páginas */

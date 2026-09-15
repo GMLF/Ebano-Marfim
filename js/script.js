@@ -2,6 +2,11 @@
   'use strict';
 
   /* =========================================================
+     visita de página — todas as páginas, uma vez por carregamento
+     ========================================================= */
+  if (window.emAuth) window.emAuth.logEvent('page_view', { path: window.location.pathname });
+
+  /* =========================================================
      catálogo — produtos reais (curadoria, não fabricação própria)
      PREÇOS SÃO PLACEHOLDER — editar quando os custos chegarem
      usado em: colecao.html (grade), quiz.html (recomendação),

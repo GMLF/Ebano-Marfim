@@ -52,6 +52,12 @@
     document.getElementById('statOrdersWeek').textContent = ordersSince(7);
     document.getElementById('statOrdersMonth').textContent = ordersSince(30);
 
+    // ---- acessos (page_view) e visitantes únicos, últimos 30 dias ----
+    const views30 = events.filter(e => e.event_type === 'page_view' && new Date(e.created_at).getTime() >= since(30));
+    document.getElementById('statViewsTotal').textContent = views30.length;
+    document.getElementById('statVisitorsUnique').textContent = new Set(views30.map(e => e.session_id)).size;
+    document.getElementById('lastUpdated').textContent = '· atualizado agora, ' + new Date().toLocaleTimeString('pt-BR');
+
     // ---- pedidos recentes ----
     const recentBox = document.getElementById('recentOrders');
     if (!orders.length) {
@@ -83,8 +89,25 @@
     const topClickRows = countBy(views, e => e.payload && e.payload.name);
     renderRankList(document.getElementById('topClicks'), topClickRows, 'key', 'cliques');
 
+    // ---- clientes que mais compraram ----
+    const customers = await window.emAuth.getTopCustomers();
+    const topCustomersBox = document.getElementById('topCustomers');
+    if (!customers.length) {
+      topCustomersBox.innerHTML = '<p style="color:var(--text-faint);">Ainda sem clientes com pedido fechado.</p>';
+    } else {
+      const maxSpent = Number(customers[0].total_spent);
+      topCustomersBox.innerHTML = customers.slice(0, 8).map(c => `
+        <div class="rank-row">
+          <span>${c.email}</span>
+          <div class="quiz-bar"><i style="width:${Math.max(6, Math.round(100 * c.total_spent / maxSpent))}%"></i></div>
+          <span>${fmt(c.total_spent)} · ${c.order_count}x</span>
+        </div>
+      `).join('');
+    }
+
     // ---- funil: quantas sessões únicas chegaram em cada etapa ----
     const stages = [
+      ['page_view', 'Visitou o site'],
       ['search', 'Buscou alguma coisa'],
       ['product_view', 'Abriu um perfume'],
       ['add_to_cart', 'Adicionou à seleção'],
