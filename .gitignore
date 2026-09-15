@@ -1,0 +1,18 @@
+# segredos e variáveis de ambiente — nunca commitar
+.env
+.env.*
+!.env.example
+
+# arquivos de sistema / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
+.vscode/
+
+# dependências (caso um dia entrem ferramentas de build)
+node_modules/
+
+# imagens brutas/temporárias usadas só durante o processamento das fotos
+*.raw.*
+assets/products/*-raw.*
