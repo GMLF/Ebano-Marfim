@@ -228,7 +228,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   align-items:center;
   gap:10px;
   font-family:var(--font-display);
-  font-size:1.28rem;
+  font-size:clamp(1.02rem, 3.6vw, 1.28rem);
   letter-spacing:.02em;
   white-space:nowrap;
 }
@@ -389,6 +389,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   }
   .hamburger span{ width:15px; height:1px; background:var(--text); display:block; }
   .line-toggle{ display:none; }
+}
+
+/* telas de celular estreitas: cabeçalho fica apertado com 4 ícones + logo —
+   tira a conta do topo (ela já existe dentro do menu hambúrguer) e encolhe
+   o espaçamento pra caber sem apertar */
+@media (max-width: 480px){
+  .header-inner{ gap:10px; }
+  .header-actions{ gap:8px; }
+  #accountBtn{ display:none; }
+  .icon-btn, .hamburger{ width:34px; height:34px; }
 }
 
 /* mobile drawer nav */
@@ -757,6 +767,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .product-card:hover .quick-view-btn{ opacity:1; transform:translateY(0); }
 .quick-view-btn:hover{ border-color:var(--accent); color:var(--accent); }
 .quick-view-btn svg{ width:14px; height:14px; }
+
+/* em telas de toque não existe :hover de verdade — mantém a lupa sempre
+   visível e dá um feedback de "afundar" ao tocar, em vez de depender do hover */
+@media (hover: none){
+  .quick-view-btn{ opacity:1; transform:none; width:40px; height:40px; }
+  .product-card:active{ transform:scale(.98); box-shadow:var(--shadow); }
+  .add-cart-btn, .qty-pills button{ min-height:40px; }
+}
 
 .product-info{ padding:22px 22px 24px; display:flex; flex-direction:column; gap:10px; flex:1; }
 .product-info .p-eyebrow{ font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--text-faint); }
