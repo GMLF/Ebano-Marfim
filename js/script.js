@@ -279,6 +279,7 @@
     headerSearchForm.addEventListener('submit', e => {
       e.preventDefault();
       const term = headerSearchInput.value.trim();
+      if (term && window.emAuth) window.emAuth.logEvent('search', { term });
       window.location.href = 'colecao.html' + (term ? '?buscar=' + encodeURIComponent(term) : '');
     });
   }
@@ -340,6 +341,7 @@
     else cart.push({ id: p.id, name: p.name, img: p.img, size, price, qty: 1 });
     saveCart(cart);
     showToast(`${p.name} · ${sizeLabel(size)} adicionado à seleção`);
+    if (window.emAuth) window.emAuth.logEvent('add_to_cart', { product_id: p.id, name: p.name, size });
   }
   function changeQty(id, size, delta) {
     const cart = loadCart();
@@ -440,6 +442,7 @@
   function openQuickView(id) {
     const p = findProduct(id);
     if (!p || !modalBody || !modal || !overlay) return;
+    if (window.emAuth) window.emAuth.logEvent('product_view', { product_id: p.id, name: p.name });
     let selectedSize = 10;
     modalBody.innerHTML = `
       <div class="modal-visual${p.artBg ? ' full-art' : ''}"><img src="${p.img}" alt="${p.name}, ${p.brand}">${p.artBg ? '' : '<span class="modal-shine" aria-hidden="true"></span>'}</div>
@@ -545,7 +548,13 @@
       renderGrid(currentFiltered());
     }
 
-    if (searchInput) searchInput.addEventListener('input', refresh);
+    let searchLogTimer;
+    if (searchInput) searchInput.addEventListener('input', () => {
+      refresh();
+      clearTimeout(searchLogTimer);
+      const term = searchInput.value.trim();
+      if (term && window.emAuth) searchLogTimer = setTimeout(() => window.emAuth.logEvent('search', { term }), 600);
+    });
     if (selectBrand) selectBrand.addEventListener('change', refresh);
     if (selectFamily) selectFamily.addEventListener('change', refresh);
 

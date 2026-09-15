@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Ébano &amp; Marfim</title>
+<meta name="description" content="Painel interno: pedidos, faturamento, produtos mais vendidos e comportamento de navegação.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Jost:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<noscript><style>.reveal.pending{opacity:1!important;transform:none!important;}</style></noscript>
+</head>
+<body>
+
+<!-- ===================== HEADER ===================== -->
+<header class="site-header" id="siteHeader">
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo"><span class="orb"></span>Ébano <em>&amp;</em> Marfim</a>
+    <nav class="nav-links" aria-label="Navegação principal">
+      <a href="index.html">Início</a>
+      <a href="colecao.html">Coleção</a>
+      <a href="quiz.html">Quiz</a>
+      <a href="atelie.html">Ateliê</a>
+      <a href="contato.html">Contato</a>
+    </nav>
+    <div class="header-actions">
+      <a class="icon-btn" id="accountBtn" href="conta.html" aria-label="Minha conta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20c1.4-3.6 4.4-5.6 7.5-5.6s6.1 2 7.5 5.6"/></svg>
+      </a>
+      <div class="line-toggle" role="group" aria-label="Alternar linha visual">
+        <button type="button" data-theme-btn="dark">Ébano</button>
+        <button type="button" data-theme-btn="light">Marfim</button>
+      </div>
+      <button class="hamburger" id="hamburgerBtn" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<!-- menu mobile -->
+<div class="mobile-nav" id="mobileNav">
+  <button class="close-x" id="mobileNavClose" aria-label="Fechar menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 5l14 14M19 5L5 19"/></svg>
+  </button>
+  <ul>
+    <li><a href="index.html">Início</a></li>
+    <li><a href="colecao.html">Coleção</a></li>
+    <li><a href="quiz.html">Quiz</a></li>
+    <li><a href="atelie.html">Ateliê</a></li>
+    <li><a href="contato.html">Contato</a></li>
+    <li><a href="conta.html">Minha Conta</a></li>
+  </ul>
+  <div class="line-toggle" role="group" aria-label="Alternar linha visual">
+    <button type="button" data-theme-btn="dark">Ébano</button>
+    <button type="button" data-theme-btn="light">Marfim</button>
+  </div>
+</div>
+
+<main>
+  <section class="section wrap">
+
+    <div id="adminGate">
+      <p style="text-align:center; color:var(--text-faint);">Verificando acesso...</p>
+    </div>
+
+    <div id="adminDenied" hidden style="text-align:center; padding:60px 0;">
+      <span class="eyebrow" style="justify-content:center;">Restrito</span>
+      <h2 style="margin-top:12px;">Essa área é só pra administração da loja</h2>
+      <p style="margin-top:10px; color:var(--text-dim);">Entra com a conta de administrador em <a href="conta.html" style="color:var(--accent);">Minha Conta</a> pra ver o painel.</p>
+    </div>
+
+    <div id="adminDashboard" hidden>
+      <div class="section-head reveal pending">
+        <div>
+          <span class="eyebrow">Dashboard</span>
+          <h2 style="margin-top:12px;">Como a loja está indo</h2>
+        </div>
+        <p class="lede">Pedidos, faturamento e comportamento de navegação — atualizado a cada vez que você abre essa página.</p>
+      </div>
+
+      <div class="stat-grid reveal pending">
+        <div class="stat-card"><div class="stat-value" id="statRevenueToday">R$ 0</div><div class="stat-label">Faturamento hoje</div></div>
+        <div class="stat-card"><div class="stat-value" id="statRevenueWeek">R$ 0</div><div class="stat-label">Últimos 7 dias</div></div>
+        <div class="stat-card"><div class="stat-value" id="statRevenueMonth">R$ 0</div><div class="stat-label">Últimos 30 dias</div></div>
+        <div class="stat-card"><div class="stat-value" id="statOrdersToday">0</div><div class="stat-label">Pedidos hoje</div></div>
+        <div class="stat-card"><div class="stat-value" id="statOrdersWeek">0</div><div class="stat-label">Pedidos · 7 dias</div></div>
+        <div class="stat-card"><div class="stat-value" id="statOrdersMonth">0</div><div class="stat-label">Pedidos · 30 dias</div></div>
+      </div>
+
+      <div class="checkout-grid reveal pending" style="margin-top:8px;">
+        <div>
+          <div class="checkout-card">
+            <h3>Pedidos recentes</h3>
+            <div id="recentOrders"><p style="color:var(--text-faint);">Carregando...</p></div>
+          </div>
+
+          <div class="checkout-card">
+            <h3>Funil — até onde os visitantes vão</h3>
+            <div class="funnel-list" id="funnelList"><p style="color:var(--text-faint);">Carregando...</p></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="checkout-card">
+            <h3>Perfumes mais vendidos</h3>
+            <div class="rank-list" id="topProducts"><p style="color:var(--text-faint);">Carregando...</p></div>
+          </div>
+
+          <div class="checkout-card">
+            <h3>Mais buscados</h3>
+            <div class="rank-list" id="topSearches"><p style="color:var(--text-faint);">Ainda sem buscas registradas.</p></div>
+          </div>
+
+          <div class="checkout-card">
+            <h3>Mais clicados (quick view)</h3>
+            <div class="rank-list" id="topClicks"><p style="color:var(--text-faint);">Ainda sem cliques registrados.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="site-footer wrap">
+  <div class="footer-bottom">
+    <span>© 2026 Ébano &amp; Marfim — Casa de Decants.</span>
+    <span>Painel interno — <code>noindex</code>, não aparece em buscadores</span>
+  </div>
+</footer>
+
+<div class="overlay" id="overlay"></div>
+<div class="toast" id="toast"></div>
+<button class="to-top" id="toTop" aria-label="Voltar ao topo">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/script.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

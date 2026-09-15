@@ -20,6 +20,8 @@
     return;
   }
 
+  if (window.emAuth) window.emAuth.logEvent('checkout_start', { item_count: cart.length, subtotal });
+
   summaryItems.innerHTML = cart.map(i => `
     <div class="order-summary-item">
       <span>${i.name} · ${i.size === 'full' ? 'frasco' : i.size + 'ml'} ×${i.qty}</span>
@@ -80,6 +82,7 @@
         subtotal: currentTotal(),
         paymentMethod: payMethod
       }).catch(() => {}); // checkout de visitante (sem login) simplesmente não salva histórico
+      window.emAuth.logEvent('checkout_complete', { order_number: orderNumber, subtotal: currentTotal(), payment_method: payMethod });
     }
 
     localStorage.removeItem('em-cart');

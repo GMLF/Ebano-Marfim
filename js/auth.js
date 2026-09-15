@@ -75,10 +75,53 @@
     return error ? [] : data;
   }
 
+  async function isAdmin() {
+    if (!client) return false;
+    const session = await getSession();
+    if (!session) return false;
+    const { data, error } = await client.rpc('is_admin');
+    return !error && data === true;
+  }
+  async function getAllOrders() {
+    if (!client) return [];
+    const { data, error } = await client.from('orders').select('*').order('created_at', { ascending: false });
+    return error ? [] : data;
+  }
+  async function getAnalyticsEvents() {
+    if (!client) return [];
+    const { data, error } = await client
+      .from('analytics_events')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(5000);
+    return error ? [] : data;
+  }
+
+  /* id anônimo por navegador — funciona mesmo sem login, pra medir até onde
+     um visitante (não só clientes com conta) foi no site */
+  function sessionId() {
+    let id = localStorage.getItem('em-session-id');
+    if (!id) {
+      id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random();
+      localStorage.setItem('em-session-id', id);
+    }
+    return id;
+  }
+  async function logEvent(eventType, payload) {
+    if (!client) return;
+    const session = await getSession();
+    client.from('analytics_events').insert({
+      event_type: eventType,
+      payload: payload || {},
+      session_id: sessionId(),
+      user_id: session ? session.user.id : null
+    }).then(() => {}, () => {}); // rastreamento nunca deve travar a navegação do site
+  }
+
   window.emAuth = {
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
-    saveOrder, getOrders
+    saveOrder, getOrders, isAdmin, getAllOrders, getAnalyticsEvents, logEvent
   };
 
   /* reflete o estado de login no ícone de conta do cabeçalho, em todas as páginas */

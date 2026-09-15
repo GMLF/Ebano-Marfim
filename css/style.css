@@ -1321,3 +1321,33 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 .order-success .ok-badge svg{ width:28px; height:28px; }
 @media (max-width:860px){ .checkout-grid{ grid-template-columns:1fr; } }
+
+/* =========================================================
+   dashboard admin
+   ========================================================= */
+.stat-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+  gap:14px;
+  margin-bottom:32px;
+}
+.stat-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:8px;
+  padding:18px 20px;
+}
+.stat-card .stat-value{ font-family:var(--font-display); font-size:1.6rem; color:var(--text); }
+.stat-card .stat-label{ font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; color:var(--text-faint); margin-top:6px; }
+
+.rank-list{ display:flex; flex-direction:column; gap:12px; }
+.rank-row{ display:grid; grid-template-columns:minmax(70px,1fr) minmax(60px,1.4fr) auto; gap:12px; align-items:center; font-size:.85rem; }
+.rank-row span:first-child{ color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rank-row span:last-child{ color:var(--text-faint); font-size:.78rem; white-space:nowrap; }
+
+.funnel-list{ display:flex; flex-direction:column; gap:10px; }
+.funnel-row{
+  display:flex; align-items:center;
+  padding:10px 4px;
+  font-size:.85rem;
+}
+.funnel-row span:first-child{ flex:0 0 150px; color:var(--text-dim); }
+.funnel-row span:last-child{ font-family:var(--font-display); color:var(--text); min-width:2ch; text-align:right; }
