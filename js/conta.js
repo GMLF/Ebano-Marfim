@@ -61,6 +61,10 @@
     document.getElementById('accountEmail').textContent = email;
     document.getElementById('accountAvatar').textContent = email.charAt(0).toUpperCase() || 'É';
     renderOrders();
+    window.emAuth.isAdmin().then(admin => {
+      const adminLink = document.getElementById('adminLink');
+      if (adminLink) adminLink.hidden = !admin;
+    });
   }
   function showGuest() {
     guestView.hidden = false;
