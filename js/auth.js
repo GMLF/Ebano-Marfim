@@ -51,9 +51,34 @@
     client.auth.onAuthStateChange((_event, session) => cb(session));
   }
 
+  async function saveOrder(order) {
+    if (!client) return { error: NOT_CONFIGURED_MSG };
+    const session = await getSession();
+    if (!session) return { error: 'sem sessão' }; // checkout de visitante, não é um erro real
+    const { error } = await client.from('orders').insert({
+      user_id: session.user.id,
+      order_number: order.orderNumber,
+      items: order.items,
+      subtotal: order.subtotal,
+      payment_method: order.paymentMethod
+    });
+    return { error: error ? error.message : null };
+  }
+  async function getOrders() {
+    if (!client) return [];
+    const session = await getSession();
+    if (!session) return [];
+    const { data, error } = await client
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+    return error ? [] : data;
+  }
+
   window.emAuth = {
     isConfigured: !!client,
-    signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange
+    signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
+    saveOrder, getOrders
   };
 
   /* reflete o estado de login no ícone de conta do cabeçalho, em todas as páginas */

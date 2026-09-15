@@ -69,8 +69,19 @@
     });
   }
 
-  document.getElementById('checkoutForm').addEventListener('submit', e => {
+  document.getElementById('checkoutForm').addEventListener('submit', async e => {
     e.preventDefault();
+    const orderNumber = String(Math.floor(100000 + Math.random() * 900000));
+
+    if (window.emAuth && window.emAuth.isConfigured) {
+      window.emAuth.saveOrder({
+        orderNumber,
+        items: cart,
+        subtotal: currentTotal(),
+        paymentMethod: payMethod
+      }).catch(() => {}); // checkout de visitante (sem login) simplesmente não salva histórico
+    }
+
     localStorage.removeItem('em-cart');
     const cartCountEl = document.getElementById('cartCount');
     if (cartCountEl) cartCountEl.hidden = true;
@@ -79,7 +90,7 @@
     document.querySelector('.sim-banner').hidden = true;
     const successEl = document.getElementById('orderSuccess');
     successEl.hidden = false;
-    document.getElementById('orderNumber').textContent = String(Math.floor(100000 + Math.random() * 900000));
+    document.getElementById('orderNumber').textContent = orderNumber;
     successEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 })();

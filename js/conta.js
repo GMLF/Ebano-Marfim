@@ -27,12 +27,40 @@
     });
   });
 
+  const fmt = n => 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const ordersBox = document.getElementById('accountOrders');
+
+  async function renderOrders() {
+    if (!ordersBox) return;
+    const orders = await window.emAuth.getOrders();
+    if (!orders.length) {
+      ordersBox.innerHTML = '<p style="margin-top:8px;">Você ainda não fez nenhum pedido por aqui.</p>';
+      return;
+    }
+    ordersBox.innerHTML = orders.map(o => `
+      <div class="order-history-item">
+        <div class="order-history-head">
+          <span>Pedido nº ${o.order_number}</span>
+          <span>${new Date(o.created_at).toLocaleDateString('pt-BR')}</span>
+        </div>
+        <div class="order-history-body">
+          ${o.items.map(i => `<span>${i.name} · ${i.size === 'full' ? 'frasco' : i.size + 'ml'} ×${i.qty}</span>`).join('')}
+        </div>
+        <div class="order-history-foot">
+          <span>${o.payment_method === 'pix' ? 'Pix' : 'Cartão'}</span>
+          <span>${fmt(o.subtotal)}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
   function showAccount(session) {
     guestView.hidden = true;
     accountView.classList.add('active');
     const email = session.user.email || '';
     document.getElementById('accountEmail').textContent = email;
     document.getElementById('accountAvatar').textContent = email.charAt(0).toUpperCase() || 'É';
+    renderOrders();
   }
   function showGuest() {
     guestView.hidden = false;
