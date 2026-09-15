@@ -233,12 +233,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   letter-spacing:.02em;
   white-space:nowrap;
 }
-.logo .orb{
-  width:19px; height:19px;
+.logo-img{
+  width:32px; height:32px;
   border-radius:50%;
-  background:conic-gradient(from 180deg, var(--ink-contrast) 0 50%, var(--bg) 50% 100%);
-  border:1px solid var(--line-strong);
   flex-shrink:0;
+  object-fit:cover;
 }
 .logo em{ font-style:italic; color:var(--accent); font-weight:400; }
 
