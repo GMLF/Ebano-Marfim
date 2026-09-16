@@ -34,18 +34,24 @@
     return Array.from(map, ([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count);
   }
 
-  let allOrders = [];
+  let allOrders = [];   // vem de admin_all_orders() — já com e-mail do cliente
   let allEvents = [];
 
-  function filterByPeriod(list, days) {
-    if (!days) return list; // 0/null = todo o histórico
-    const cutoff = Date.now() - days * DAY_MS;
-    return list.filter(item => new Date(item.created_at).getTime() >= cutoff);
+  // filtro atual: { type: 'days', value: N } ou { type: 'month', year, month }
+  let currentFilter = { type: 'days', value: 30 };
+
+  function matchesFilter(dateStr, filter) {
+    const d = new Date(dateStr);
+    if (filter.type === 'month') {
+      return d.getFullYear() === filter.year && d.getMonth() === filter.month;
+    }
+    if (!filter.value) return true; // "Tudo"
+    return d.getTime() >= Date.now() - filter.value * DAY_MS;
   }
 
-  async function renderForPeriod(days) {
-    const orders = filterByPeriod(allOrders, days);
-    const events = filterByPeriod(allEvents, days);
+  function renderForFilter() {
+    const orders = allOrders.filter(o => matchesFilter(o.created_at, currentFilter));
+    const events = allEvents.filter(e => matchesFilter(e.created_at, currentFilter));
 
     // ---- faturamento, pedidos, acessos, visitantes únicos ----
     document.getElementById('statRevenue').textContent = fmt(orders.reduce((s, o) => s + Number(o.subtotal), 0));
@@ -83,13 +89,20 @@
     const productViews = events.filter(e => e.event_type === 'product_view');
     renderRankList(document.getElementById('topClicks'), countBy(productViews, e => e.payload && e.payload.name), 'key', 'cliques');
 
-    // ---- clientes que mais compraram (consulta própria, respeitando o período) ----
+    // ---- clientes que mais compraram (calculado no cliente, mesmo dado dos pedidos) ----
+    const spentByEmail = new Map();
+    orders.forEach(o => {
+      const cur = spentByEmail.get(o.email) || { total_spent: 0, order_count: 0 };
+      cur.total_spent += Number(o.subtotal);
+      cur.order_count += 1;
+      spentByEmail.set(o.email, cur);
+    });
+    const customers = Array.from(spentByEmail, ([email, v]) => ({ email, ...v })).sort((a, b) => b.total_spent - a.total_spent);
     const topCustomersBox = document.getElementById('topCustomers');
-    const customers = await window.emAuth.getTopCustomers(days);
     if (!customers.length) {
       topCustomersBox.innerHTML = '<p style="color:var(--text-faint);">Ainda sem clientes com pedido fechado nesse período.</p>';
     } else {
-      const maxSpent = Number(customers[0].total_spent);
+      const maxSpent = customers[0].total_spent;
       topCustomersBox.innerHTML = customers.slice(0, 8).map(c => `
         <div class="rank-row">
           <span>${c.email}</span>
@@ -120,24 +133,38 @@
     `).join('');
   }
 
-  function wirePeriodFilter() {
-    const buttons = document.querySelectorAll('#periodFilter .pay-method');
-    buttons.forEach(btn => {
+  function wireFilters() {
+    const dayButtons = document.querySelectorAll('#periodFilter .pay-method');
+    const monthSelect = document.getElementById('filterMonth');
+    const yearSelect = document.getElementById('filterYear');
+
+    dayButtons.forEach(btn => {
       btn.addEventListener('click', () => {
-        buttons.forEach(b => b.classList.remove('active'));
+        dayButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        renderForPeriod(Number(btn.dataset.days));
+        monthSelect.value = '';
+        currentFilter = { type: 'days', value: Number(btn.dataset.days) };
+        renderForFilter();
       });
     });
+
+    function applyMonthFilter() {
+      if (monthSelect.value === '') return;
+      dayButtons.forEach(b => b.classList.remove('active'));
+      currentFilter = { type: 'month', year: Number(yearSelect.value), month: Number(monthSelect.value) };
+      renderForFilter();
+    }
+    monthSelect.addEventListener('change', applyMonthFilter);
+    yearSelect.addEventListener('change', applyMonthFilter);
   }
 
   async function loadDashboard() {
     [allOrders, allEvents] = await Promise.all([
-      window.emAuth.getAllOrders(),
+      window.emAuth.getAllOrdersWithEmail(),
       window.emAuth.getAnalyticsEvents()
     ]);
-    wirePeriodFilter();
-    renderForPeriod(30); // período padrão ao abrir a página
+    wireFilters();
+    renderForFilter();
   }
 
   (async () => {

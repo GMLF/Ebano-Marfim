@@ -92,6 +92,11 @@
     const { data, error } = await client.from('orders').select('*').order('created_at', { ascending: false });
     return error ? [] : data;
   }
+  async function getAllOrdersWithEmail() {
+    if (!client) return [];
+    const { data, error } = await client.rpc('admin_all_orders');
+    return error ? [] : data;
+  }
   async function getAnalyticsEvents() {
     if (!client) return [];
     const { data, error } = await client
@@ -126,7 +131,7 @@
   window.emAuth = {
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
-    saveOrder, getOrders, isAdmin, getAllOrders, getAnalyticsEvents, logEvent, getTopCustomers
+    saveOrder, getOrders, isAdmin, getAllOrders, getAllOrdersWithEmail, getAnalyticsEvents, logEvent, getTopCustomers
   };
 
   /* reflete o estado de login no ícone de conta do cabeçalho, em todas as páginas */

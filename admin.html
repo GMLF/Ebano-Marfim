@@ -71,7 +71,7 @@
     </div>
 
     <div id="adminDashboard" hidden>
-      <div class="section-head reveal pending">
+      <div class="section-head">
         <div>
           <span class="eyebrow">Dashboard</span>
           <h2 style="margin-top:12px;">Como a loja está indo</h2>
@@ -79,21 +79,50 @@
         <p class="lede">Os números são calculados na hora, direto do banco, cada vez que você abre, recarrega ou troca o período nesta página. <span id="lastUpdated" style="color:var(--text-faint);"></span></p>
       </div>
 
-      <div class="pay-methods reveal pending" id="periodFilter" style="max-width:520px;">
-        <button type="button" class="pay-method" data-days="1">Hoje</button>
-        <button type="button" class="pay-method" data-days="7">7 dias</button>
-        <button type="button" class="pay-method active" data-days="30">30 dias</button>
-        <button type="button" class="pay-method" data-days="0">Tudo</button>
+      <div id="periodFilter" style="max-width:660px;">
+        <div class="pay-methods">
+          <button type="button" class="pay-method" data-days="1">Hoje</button>
+          <button type="button" class="pay-method" data-days="7">7 dias</button>
+          <button type="button" class="pay-method active" data-days="30">30 dias</button>
+          <button type="button" class="pay-method" data-days="0">Tudo</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap;">
+          <span style="font-size:.78rem; color:var(--text-faint);">ou escolha um mês:</span>
+          <div class="select-field">
+            <select id="filterMonth">
+              <option value="">Mês</option>
+              <option value="0">Janeiro</option>
+              <option value="1">Fevereiro</option>
+              <option value="2">Março</option>
+              <option value="3">Abril</option>
+              <option value="4">Maio</option>
+              <option value="5">Junho</option>
+              <option value="6">Julho</option>
+              <option value="7">Agosto</option>
+              <option value="8">Setembro</option>
+              <option value="9">Outubro</option>
+              <option value="10">Novembro</option>
+              <option value="11">Dezembro</option>
+            </select>
+          </div>
+          <div class="select-field">
+            <select id="filterYear">
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div class="stat-grid reveal pending" style="margin-top:20px;">
+      <div class="stat-grid" style="margin-top:24px;">
         <div class="stat-card"><div class="stat-value" id="statRevenue">R$ 0</div><div class="stat-label">Faturamento no período</div></div>
         <div class="stat-card"><div class="stat-value" id="statOrders">0</div><div class="stat-label">Pedidos no período</div></div>
         <div class="stat-card"><div class="stat-value" id="statViewsTotal">0</div><div class="stat-label">Acessos no período</div></div>
         <div class="stat-card"><div class="stat-value" id="statVisitorsUnique">0</div><div class="stat-label">Visitantes únicos</div></div>
       </div>
 
-      <div class="checkout-grid reveal pending" style="margin-top:8px;">
+      <div class="checkout-grid" style="margin-top:8px;">
         <div>
           <div class="checkout-card">
             <h3>Pedidos recentes</h3>
