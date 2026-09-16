@@ -53,12 +53,12 @@
     const orders = allOrders.filter(o => matchesFilter(o.created_at, currentFilter));
     const events = allEvents.filter(e => matchesFilter(e.created_at, currentFilter));
 
-    // ---- faturamento, pedidos, acessos, visitantes únicos ----
+    // ---- faturamento, pedidos, acessos (por usuário, não por página), páginas visualizadas ----
     document.getElementById('statRevenue').textContent = fmt(orders.reduce((s, o) => s + Number(o.subtotal), 0));
     document.getElementById('statOrders').textContent = orders.length;
     const views = events.filter(e => e.event_type === 'page_view');
-    document.getElementById('statViewsTotal').textContent = views.length;
-    document.getElementById('statVisitorsUnique').textContent = new Set(views.map(e => e.session_id)).size;
+    document.getElementById('statViewsTotal').textContent = new Set(views.map(e => e.session_id)).size;
+    document.getElementById('statVisitorsUnique').textContent = views.length;
     document.getElementById('lastUpdated').textContent = '· atualizado agora, ' + new Date().toLocaleTimeString('pt-BR');
 
     // ---- pedidos recentes (dentro do período) ----
