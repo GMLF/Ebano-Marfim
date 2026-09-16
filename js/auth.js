@@ -60,7 +60,11 @@
       order_number: order.orderNumber,
       items: order.items,
       subtotal: order.subtotal,
-      payment_method: order.paymentMethod
+      payment_method: order.paymentMethod,
+      shipping_carrier: order.shippingCarrier,
+      shipping_service: order.shippingService,
+      shipping_price: order.shippingPrice,
+      shipping_days: order.shippingDays
     });
     return { error: error ? error.message : null };
   }
@@ -107,6 +111,15 @@
     return error ? [] : data;
   }
 
+  async function calcularFrete(cepDestino, items) {
+    if (!client) return { error: NOT_CONFIGURED_MSG };
+    const { data, error } = await client.functions.invoke('calcular-frete', {
+      body: { cepDestino, items }
+    });
+    if (error) return { error: 'Não foi possível calcular o frete agora.' };
+    return data;
+  }
+
   /* id anônimo por navegador — funciona mesmo sem login, pra medir até onde
      um visitante (não só clientes com conta) foi no site */
   function sessionId() {
@@ -131,7 +144,7 @@
   window.emAuth = {
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
-    saveOrder, getOrders, isAdmin, getAllOrders, getAllOrdersWithEmail, getAnalyticsEvents, logEvent, getTopCustomers
+    saveOrder, getOrders, isAdmin, getAllOrders, getAllOrdersWithEmail, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete
   };
 
   /* reflete o estado de login no ícone de conta do cabeçalho, em todas as páginas */

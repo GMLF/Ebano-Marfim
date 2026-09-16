@@ -62,6 +62,23 @@ Pra aceitar pagamento de verdade, o caminho é integrar um **gateway de pagament
 - **CNPJ** pra abrir conta de recebimento no gateway;
 - Um **backend** que gere a cobrança com as credenciais do gateway (não dá pra fazer isso só no front-end com segurança) — o Supabase também serve pra isso via Edge Functions, ou um servidor Node simples.
 
+## Como ativar o cálculo de frete (Correios + Jadlog via Melhor Envio)
+
+O checkout já tem o botão "Calcular frete" e a Edge Function pronta (`supabase/functions/calcular-frete/`), só falta ligar as credenciais:
+
+1. Rode `supabase/shipping.sql` no SQL Editor do Supabase (adiciona as colunas de frete na tabela `orders`).
+2. Crie uma conta gratuita em [melhorenvio.com.br](https://melhorenvio.com.br) (aceita CPF, não precisa de CNPJ) e, no painel, gere um **token de API** (Meus Aplicativos → Gerar Token, com escopo de cotação de frete).
+3. Instale a [CLI do Supabase](https://supabase.com/docs/guides/cli) e faça o login (`supabase login`), depois `supabase link` no seu projeto.
+4. Configure os secrets da função (nunca no código, nunca commitados):
+   ```bash
+   supabase secrets set MELHOR_ENVIO_TOKEN=seu-token-aqui
+   supabase secrets set ORIGEM_CEP=00000000
+   supabase secrets set CONTATO_EMAIL=contato@ebanoemarfim.com.br
+   ```
+5. Publique a função: `supabase functions deploy calcular-frete`.
+
+Até isso ser configurado, o botão de calcular frete mostra "Frete ainda não configurado no servidor" em vez de travar. O peso de cada item é uma **estimativa** (definida em `PESO_POR_ITEM` dentro da função) — ajuste os valores lá se pesar os produtos de verdade.
+
 ## Editar preços
 
 Os preços de decant/frasco fechado estão em `js/script.js`, no topo do arquivo, no array `PRODUCTS` (campos `fullPrice` e `decants: {3, 5, 10}`). Estão como **placeholder** — troque pelos custos reais quando você os definir.

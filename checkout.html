@@ -109,7 +109,7 @@
               <div class="checkout-fieldrow">
                 <div>
                   <label for="ckCep">CEP</label>
-                  <input type="text" id="ckCep" required>
+                  <input type="text" id="ckCep" placeholder="00000-000" inputmode="numeric" required>
                 </div>
                 <div style="grid-column:span 2;">
                   <label for="ckAddress">Endereço</label>
@@ -126,6 +126,12 @@
                   <input type="text" id="ckState" maxlength="2" placeholder="SP" required>
                 </div>
               </div>
+            </div>
+
+            <div class="checkout-card">
+              <h3>Frete</h3>
+              <button type="button" class="btn" id="calcFreteBtn" style="width:100%;">Calcular frete pro meu CEP</button>
+              <div id="freteOpcoes" style="margin-top:14px;"></div>
             </div>
 
             <div class="checkout-card">

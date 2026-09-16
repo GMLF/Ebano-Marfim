@@ -33,9 +33,11 @@
   const totalEl = document.getElementById('orderSummaryTotal');
   let payMethod = 'cartao';
   const PIX_DISCOUNT = 0.05;
+  let frete = null; // { transportadora, servico, preco, dias }
 
   function currentTotal() {
-    return payMethod === 'pix' ? subtotal * (1 - PIX_DISCOUNT) : subtotal;
+    const base = payMethod === 'pix' ? subtotal * (1 - PIX_DISCOUNT) : subtotal;
+    return base + (frete ? frete.preco : 0);
   }
   function renderInstallments() {
     const total = currentTotal();
@@ -44,10 +46,67 @@
     ).join('');
   }
   function renderTotal() {
-    totalEl.textContent = fmt(currentTotal()) + (payMethod === 'pix' ? ' (com 5% off)' : '');
+    totalEl.textContent = fmt(currentTotal()) + (payMethod === 'pix' ? ' (com 5% off nos produtos)' : '');
+    const freteRow = document.getElementById('freteSummaryRow');
+    if (frete) {
+      const row = `<span>Frete · ${frete.transportadora} ${frete.servico}</span><span>${fmt(frete.preco)}</span>`;
+      if (freteRow) freteRow.innerHTML = row;
+      else summaryItems.insertAdjacentHTML('beforeend', `<div class="order-summary-item" id="freteSummaryRow">${row}</div>`);
+    } else if (freteRow) {
+      freteRow.remove();
+    }
   }
   renderInstallments();
   renderTotal();
+
+  const calcFreteBtn = document.getElementById('calcFreteBtn');
+  const freteOpcoesEl = document.getElementById('freteOpcoes');
+
+  calcFreteBtn?.addEventListener('click', async () => {
+    const cep = document.getElementById('ckCep').value.replace(/\D/g, '');
+    if (cep.length !== 8) {
+      freteOpcoesEl.innerHTML = '<p style="color:var(--text-faint);">Digite um CEP válido (8 números) antes de calcular.</p>';
+      return;
+    }
+    if (!window.emAuth || !window.emAuth.isConfigured) {
+      freteOpcoesEl.innerHTML = '<p style="color:var(--text-faint);">Frete ainda não está disponível neste site.</p>';
+      return;
+    }
+    calcFreteBtn.disabled = true;
+    calcFreteBtn.textContent = 'Calculando...';
+    freteOpcoesEl.innerHTML = '';
+
+    const result = await window.emAuth.calcularFrete(cep, cart.map(i => ({ size: i.size, qty: i.qty })));
+
+    calcFreteBtn.disabled = false;
+    calcFreteBtn.textContent = 'Calcular frete pro meu CEP';
+
+    if (result.error || !result.opcoes || !result.opcoes.length) {
+      freteOpcoesEl.innerHTML = `<p style="color:var(--text-faint);">${result.error || 'Nenhuma opção de frete encontrada pra esse CEP.'}</p>`;
+      return;
+    }
+
+    freteOpcoesEl.innerHTML = result.opcoes.map((op, i) => `
+      <label class="pay-method" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px; cursor:pointer;">
+        <span>
+          <input type="radio" name="freteOpcao" value="${i}" ${i === 0 ? 'checked' : ''} style="margin-right:8px;">
+          ${op.transportadora} · ${op.servico} — ${op.dias} dia(s)
+        </span>
+        <b>${fmt(op.preco)}</b>
+      </label>
+    `).join('');
+
+    function selecionarFrete(i) {
+      const op = result.opcoes[i];
+      frete = { transportadora: op.transportadora, servico: op.servico, preco: op.preco, dias: op.dias };
+      renderInstallments();
+      renderTotal();
+    }
+    freteOpcoesEl.querySelectorAll('input[name="freteOpcao"]').forEach(input => {
+      input.addEventListener('change', () => selecionarFrete(Number(input.value)));
+    });
+    selecionarFrete(0);
+  });
 
   document.querySelectorAll('.pay-method').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -73,6 +132,13 @@
 
   document.getElementById('checkoutForm').addEventListener('submit', async e => {
     e.preventDefault();
+
+    if (!frete) {
+      freteOpcoesEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      freteOpcoesEl.innerHTML = '<p style="color:var(--accent);">Calcule e escolha uma opção de frete antes de confirmar o pedido.</p>';
+      return;
+    }
+
     const orderNumber = String(Math.floor(100000 + Math.random() * 900000));
 
     if (window.emAuth && window.emAuth.isConfigured) {
@@ -80,7 +146,11 @@
         orderNumber,
         items: cart,
         subtotal: currentTotal(),
-        paymentMethod: payMethod
+        paymentMethod: payMethod,
+        shippingCarrier: frete.transportadora,
+        shippingService: frete.servico,
+        shippingPrice: frete.preco,
+        shippingDays: frete.dias
       }).catch(() => {}); // checkout de visitante (sem login) simplesmente não salva histórico
       window.emAuth.logEvent('checkout_complete', { order_number: orderNumber, subtotal: currentTotal(), payment_method: payMethod });
     }
