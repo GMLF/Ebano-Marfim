@@ -10,7 +10,7 @@
     client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
   }
 
-  const NOT_CONFIGURED_MSG = 'Login ainda não está configurado neste site — falta ligar as credenciais do Supabase (veja o README.md).';
+  const NOT_CONFIGURED_MSG = 'Login ainda não está configurado neste site: falta ligar as credenciais do Supabase (veja o README.md).';
 
   async function signUp(email, password) {
     if (!client) return { error: NOT_CONFIGURED_MSG };

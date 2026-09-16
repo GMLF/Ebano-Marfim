@@ -460,10 +460,10 @@
           <div class="pyramid-row"><b>Fundo</b><span>${p.base}</span></div>
         </div>
         <div class="size-row" id="sizeRow">
-          <button data-size="3">Decant<small>3ml — ${fmt(p.decants[3])}</small></button>
-          <button data-size="5">Decant<small>5ml — ${fmt(p.decants[5])}</small></button>
-          <button class="active" data-size="10">Decant<small>10ml — ${fmt(p.decants[10])}</small></button>
-          <button data-size="full">Frasco fechado<small>${p.fullSize}ml — ${fmt(p.fullPrice)}</small></button>
+          <button data-size="3">Decant<small>3ml · ${fmt(p.decants[3])}</small></button>
+          <button data-size="5">Decant<small>5ml · ${fmt(p.decants[5])}</small></button>
+          <button class="active" data-size="10">Decant<small>10ml · ${fmt(p.decants[10])}</small></button>
+          <button data-size="full">Frasco fechado<small>${p.fullSize}ml · ${fmt(p.fullPrice)}</small></button>
         </div>
         <div class="modal-foot">
           <span class="product-price" id="modalPrice">${fmt(p.decants[10])}</span>
@@ -831,7 +831,7 @@
         return;
       }
       newsletterMsg.classList.remove('err');
-      newsletterMsg.textContent = `Inscrição confirmada para ${input.value.trim()} — até a próxima novidade.`;
+      newsletterMsg.textContent = `Inscrição confirmada para ${input.value.trim()}. Até a próxima novidade.`;
       input.value = '';
     });
   }
