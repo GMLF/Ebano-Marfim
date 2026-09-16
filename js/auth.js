@@ -82,9 +82,9 @@
     const { data, error } = await client.rpc('is_admin');
     return !error && data === true;
   }
-  async function getTopCustomers() {
+  async function getTopCustomers(sinceDays) {
     if (!client) return [];
-    const { data, error } = await client.rpc('admin_top_customers');
+    const { data, error } = await client.rpc('admin_top_customers', { since_days: sinceDays || null });
     return error ? [] : data;
   }
   async function getAllOrders() {

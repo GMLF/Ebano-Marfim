@@ -76,18 +76,21 @@
           <span class="eyebrow">Dashboard</span>
           <h2 style="margin-top:12px;">Como a loja está indo</h2>
         </div>
-        <p class="lede">Pedidos, faturamento e comportamento de navegação: os números são calculados na hora, direto do banco, cada vez que você abre ou recarrega essa página. <span id="lastUpdated" style="color:var(--text-faint);"></span></p>
+        <p class="lede">Os números são calculados na hora, direto do banco, cada vez que você abre, recarrega ou troca o período nesta página. <span id="lastUpdated" style="color:var(--text-faint);"></span></p>
       </div>
 
-      <div class="stat-grid reveal pending">
-        <div class="stat-card"><div class="stat-value" id="statRevenueToday">R$ 0</div><div class="stat-label">Faturamento hoje</div></div>
-        <div class="stat-card"><div class="stat-value" id="statRevenueWeek">R$ 0</div><div class="stat-label">Últimos 7 dias</div></div>
-        <div class="stat-card"><div class="stat-value" id="statRevenueMonth">R$ 0</div><div class="stat-label">Últimos 30 dias</div></div>
-        <div class="stat-card"><div class="stat-value" id="statOrdersToday">0</div><div class="stat-label">Pedidos hoje</div></div>
-        <div class="stat-card"><div class="stat-value" id="statOrdersWeek">0</div><div class="stat-label">Pedidos · 7 dias</div></div>
-        <div class="stat-card"><div class="stat-value" id="statOrdersMonth">0</div><div class="stat-label">Pedidos · 30 dias</div></div>
-        <div class="stat-card"><div class="stat-value" id="statViewsTotal">0</div><div class="stat-label">Acessos · 30 dias</div></div>
-        <div class="stat-card"><div class="stat-value" id="statVisitorsUnique">0</div><div class="stat-label">Visitantes únicos · 30 dias</div></div>
+      <div class="pay-methods reveal pending" id="periodFilter" style="max-width:520px;">
+        <button type="button" class="pay-method" data-days="1">Hoje</button>
+        <button type="button" class="pay-method" data-days="7">7 dias</button>
+        <button type="button" class="pay-method active" data-days="30">30 dias</button>
+        <button type="button" class="pay-method" data-days="0">Tudo</button>
+      </div>
+
+      <div class="stat-grid reveal pending" style="margin-top:20px;">
+        <div class="stat-card"><div class="stat-value" id="statRevenue">R$ 0</div><div class="stat-label">Faturamento no período</div></div>
+        <div class="stat-card"><div class="stat-value" id="statOrders">0</div><div class="stat-label">Pedidos no período</div></div>
+        <div class="stat-card"><div class="stat-value" id="statViewsTotal">0</div><div class="stat-label">Acessos no período</div></div>
+        <div class="stat-card"><div class="stat-value" id="statVisitorsUnique">0</div><div class="stat-label">Visitantes únicos</div></div>
       </div>
 
       <div class="checkout-grid reveal pending" style="margin-top:8px;">
