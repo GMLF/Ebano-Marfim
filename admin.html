@@ -121,16 +121,19 @@
         <div class="stat-card"><div class="stat-value" id="statViewsTotal">0</div><div class="stat-label">Acessos no período</div></div>
         <div class="stat-card"><div class="stat-value" id="statVisitorsUnique">0</div><div class="stat-label">Visitantes únicos</div></div>
       </div>
+      <p style="font-size:.76rem; color:var(--text-faint); margin-top:8px;">Acessos conta cada página aberta; visitantes únicos conta navegadores diferentes — um visitante pode gerar vários acessos.</p>
 
       <div class="checkout-grid" style="margin-top:8px;">
         <div>
           <div class="checkout-card">
             <h3>Pedidos recentes</h3>
+            <p style="font-size:.76rem; color:var(--text-faint); margin-bottom:10px;">Só conta pedido fechado no checkout — visita ou clique não vira pedido aqui.</p>
             <div id="recentOrders"><p style="color:var(--text-faint);">Carregando...</p></div>
           </div>
 
           <div class="checkout-card">
             <h3>Funil: até onde os visitantes vão</h3>
+            <p style="font-size:.76rem; color:var(--text-faint); margin-bottom:10px;">Cada etapa conta visitantes únicos que chegaram até ali — nem todo visitante avança pra próxima etapa.</p>
             <div class="funnel-list" id="funnelList"><p style="color:var(--text-faint);">Carregando...</p></div>
           </div>
         </div>
@@ -138,6 +141,7 @@
         <div>
           <div class="checkout-card">
             <h3>Perfumes mais vendidos</h3>
+            <p style="font-size:.76rem; color:var(--text-faint); margin-bottom:10px;">Só conta o que foi de fato comprado (pedido fechado), não visualização.</p>
             <div class="rank-list" id="topProducts"><p style="color:var(--text-faint);">Carregando...</p></div>
           </div>
 
@@ -148,6 +152,7 @@
 
           <div class="checkout-card">
             <h3>Mais clicados (quick view)</h3>
+            <p style="font-size:.76rem; color:var(--text-faint); margin-bottom:10px;">Conta cada clique — o mesmo visitante pode abrir vários perfumes ou o mesmo mais de uma vez.</p>
             <div class="rank-list" id="topClicks"><p style="color:var(--text-faint);">Ainda sem cliques registrados.</p></div>
           </div>
 
