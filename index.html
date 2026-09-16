@@ -153,43 +153,7 @@
       </div>
       <p class="lede">Uma amostra da curadoria completa: a coleção inteira, com busca e filtros, está na página Coleção.</p>
     </div>
-    <div class="product-grid reveal pending">
-      <a class="product-card" href="colecao.html#p-bidaya-sex-on-the-rocks" style="text-decoration:none;">
-        <div class="product-visual full-art">
-          <span class="brand-tag">Bidaya Parfums</span>
-          <img class="product-photo" src="assets/products/bidaya-sex-on-the-rocks.jpg" alt="Sex on the Rocks, Bidaya Parfums">
-        </div>
-        <div class="product-info">
-          <span class="p-eyebrow">Oriental Vanilla · Unissex</span>
-          <h3>Sex on the Rocks</h3>
-          <p style="font-size:.88rem;">Cognac, caramelo e vanilla: o mais provocante da Bidaya Parfums.</p>
-        </div>
-      </a>
-      <a class="product-card" href="colecao.html#p-cafe-drops" style="text-decoration:none;">
-        <div class="product-visual">
-          <span class="brand-tag">Mykonos</span>
-          <img class="product-photo" src="assets/products/cafe-drops.png" alt="Café Drops, Mykonos">
-          <span class="shine" aria-hidden="true"></span>
-        </div>
-        <div class="product-info">
-          <span class="p-eyebrow">Gourmand Oriental · Unissex</span>
-          <h3>Café Drops</h3>
-          <p style="font-size:.88rem;">Café, vanilla e fava tonka: a garrafinha que todo mundo comenta.</p>
-        </div>
-      </a>
-      <a class="product-card" href="colecao.html#p-dior-sauvage" style="text-decoration:none;">
-        <div class="product-visual">
-          <span class="brand-tag">Dior</span>
-          <img class="product-photo" src="assets/products/dior-sauvage.png" alt="Sauvage, Dior">
-          <span class="shine" aria-hidden="true"></span>
-        </div>
-        <div class="product-info">
-          <span class="p-eyebrow">Aromático Amadeirado · Masculino</span>
-          <h3>Sauvage</h3>
-          <p style="font-size:.88rem;">O best-seller de grife, agora também em decant.</p>
-        </div>
-      </a>
-    </div>
+    <div class="product-grid reveal pending" id="destaquesGrid"><!-- 3 perfumes aleatórios do catálogo, gerados via JS a cada visita --></div>
     <div style="text-align:center; margin-top:36px;">
       <a href="colecao.html" class="btn btn-solid">Ver coleção completa</a>
     </div>
@@ -268,6 +232,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
 <script src="js/supabase-config.js"></script>
 <script src="js/auth.js"></script>
+<script src="data/products.js"></script>
 <script src="js/script.js"></script>
 </body>
 </html>
