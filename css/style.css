@@ -1396,3 +1396,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 .funnel-row span:first-child{ flex:0 0 150px; color:var(--text-dim); }
 .funnel-row span:last-child{ font-family:var(--font-display); color:var(--text); min-width:2ch; text-align:right; }
+
+.fulfill-row{ border:1px solid var(--line); border-radius:6px; padding:16px; margin-bottom:12px; }
+.fulfill-row-head{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
+.fulfill-row-head b{ font-family:var(--font-display); font-size:1.05rem; }
+.fulfill-meta{ font-size:.78rem; color:var(--text-faint); }
+.fulfill-address{ font-size:.83rem; color:var(--text-dim); line-height:1.7; }
+.status-select{
+  font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; font-weight:600;
+  padding:6px 12px; border-radius:999px; border:1px solid transparent; cursor:pointer;
+  background:var(--line-strong); color:var(--text-dim);
+}
+.status-select.status-pendente{ background:var(--line-strong); color:var(--text-dim); }
+.status-select.status-pago{ background:var(--accent-soft); color:var(--accent); }
+.status-select.status-enviado{ background:rgba(79,140,224,.16); color:#4F7FE0; }
+.status-select.status-entregue{ background:var(--success-soft); color:var(--success); }
+.status-select.status-cancelado{ background:rgba(200,60,60,.14); color:#C33; }

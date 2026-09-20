@@ -162,6 +162,22 @@
           </div>
         </div>
       </div>
+
+      <div class="checkout-card" style="margin-top:24px;">
+        <h3>Pedidos e envio</h3>
+        <p style="font-size:.76rem; color:var(--text-faint); margin-bottom:14px;">Lista completa, não filtra por período — muda o status aqui conforme for despachando. O endereço é o que o cliente preencheu no checkout.</p>
+        <div class="select-field" style="max-width:220px; margin-bottom:16px;">
+          <select id="filterStatus">
+            <option value="">Todos os status</option>
+            <option value="pendente">Pendente</option>
+            <option value="pago">Pago</option>
+            <option value="enviado">Enviado</option>
+            <option value="entregue">Entregue</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div id="fulfillmentList"><p style="color:var(--text-faint);">Carregando...</p></div>
+      </div>
     </div>
 
   </section>

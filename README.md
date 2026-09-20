@@ -99,6 +99,15 @@ Os preços de decant/frasco fechado estão em `data/products.js` (campos `fullPr
 
 Rode `supabase/product_prices.sql` e `supabase/analytics_hardening.sql` no SQL Editor do Supabase pra ativar essas duas proteções.
 
+## Status do pedido e envio (painel de admin)
+
+Rode `supabase/order_fulfillment.sql` no SQL Editor do Supabase. Ele adiciona:
+- Uma coluna `status` em `orders` (`pendente`, `pago`, `enviado`, `entregue`, `cancelado`), começando sempre em `pendente`.
+- As colunas de endereço do destinatário (`recipient_name`, `recipient_phone`, `cep`, `street`, `number`, `neighborhood`, `city`, `state`) — o checkout já manda esses dados, só faltava o banco ter onde guardar.
+- A função `admin_update_order_status`, que só admin consegue chamar, e só muda a coluna `status` — nunca o valor do pedido.
+
+No `admin.html`, a seção **"Pedidos e envio"** lista todos os pedidos (não filtra por período, de propósito — um pedido parado há semanas ainda precisa aparecer) com o endereço de entrega e um seletor de status editável direto ali.
+
 ## Funcionalidades
 
 - **Navegação por páginas separadas**: Início, Coleção, Quiz, Ateliê, Contato, Minha Conta e Checkout.

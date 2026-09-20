@@ -64,7 +64,15 @@
       shipping_carrier: order.shippingCarrier,
       shipping_service: order.shippingService,
       shipping_price: order.shippingPrice,
-      shipping_days: order.shippingDays
+      shipping_days: order.shippingDays,
+      recipient_name: order.recipientName,
+      recipient_phone: order.recipientPhone,
+      cep: order.cep,
+      street: order.street,
+      number: order.number,
+      neighborhood: order.neighborhood,
+      city: order.city,
+      state: order.state
     });
     return { error: error ? error.message : null };
   }
@@ -100,6 +108,11 @@
     if (!client) return [];
     const { data, error } = await client.rpc('admin_all_orders');
     return error ? [] : data;
+  }
+  async function updateOrderStatus(orderId, status) {
+    if (!client) return { error: NOT_CONFIGURED_MSG };
+    const { error } = await client.rpc('admin_update_order_status', { pedido_id: orderId, novo_status: status });
+    return { error: error ? error.message : null };
   }
   async function getAnalyticsEvents() {
     if (!client) return [];
@@ -144,7 +157,7 @@
   window.emAuth = {
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
-    saveOrder, getOrders, isAdmin, getAllOrders, getAllOrdersWithEmail, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete
+    saveOrder, getOrders, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete
   };
 
   /* reflete o estado de login no ícone de conta do cabeçalho, em todas as páginas */

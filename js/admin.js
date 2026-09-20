@@ -158,6 +158,59 @@
     yearSelect.addEventListener('change', applyMonthFilter);
   }
 
+  const STATUS_LABEL = { pendente: 'Pendente', pago: 'Pago', enviado: 'Enviado', entregue: 'Entregue', cancelado: 'Cancelado' };
+
+  // lista completa de pedidos pra acompanhar envio — não respeita o filtro de período de cima
+  // de propósito, porque um pedido pendente de semanas atrás ainda precisa aparecer aqui.
+  function renderFulfillment() {
+    const statusFiltro = document.getElementById('filterStatus').value;
+    const lista = statusFiltro ? allOrders.filter(o => o.status === statusFiltro) : allOrders;
+    const box = document.getElementById('fulfillmentList');
+
+    if (!lista.length) {
+      box.innerHTML = '<p style="color:var(--text-faint);">Nenhum pedido aqui.</p>';
+      return;
+    }
+
+    box.innerHTML = lista.map(o => `
+      <div class="fulfill-row">
+        <div class="fulfill-row-head">
+          <div>
+            <b>#${o.order_number}</b>
+            <span class="fulfill-meta"> · ${new Date(o.created_at).toLocaleDateString('pt-BR')} · ${o.email} · ${fmt(o.subtotal)}</span>
+          </div>
+          <select class="status-select status-${o.status}" data-order-id="${o.id}">
+            ${Object.entries(STATUS_LABEL).map(([value, label]) => `<option value="${value}" ${value === o.status ? 'selected' : ''}>${label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fulfill-address">
+          ${o.recipient_name || 'sem nome salvo'} · ${o.recipient_phone || 'sem telefone salvo'}<br>
+          ${[o.street, o.number].filter(Boolean).join(', ')}${o.neighborhood ? ' - ' + o.neighborhood : ''}<br>
+          ${[o.city, o.state].filter(Boolean).join('/')}${o.cep ? ' · CEP ' + o.cep : ''}<br>
+          Envio: ${o.shipping_carrier || '—'}${o.shipping_service ? ' · ' + o.shipping_service : ''}${o.shipping_price != null ? ' · ' + (o.shipping_price > 0 ? fmt(o.shipping_price) : 'Grátis') : ''}
+        </div>
+      </div>
+    `).join('');
+
+    box.querySelectorAll('.status-select').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        const orderId = sel.dataset.orderId;
+        const novoStatus = sel.value;
+        sel.disabled = true;
+        const result = await window.emAuth.updateOrderStatus(orderId, novoStatus);
+        sel.disabled = false;
+        if (result.error) {
+          alert('Não deu pra atualizar o status: ' + result.error);
+          sel.value = allOrders.find(o => o.id === orderId)?.status || 'pendente';
+          return;
+        }
+        const pedido = allOrders.find(o => o.id === orderId);
+        if (pedido) pedido.status = novoStatus;
+        sel.className = `status-select status-${novoStatus}`;
+      });
+    });
+  }
+
   async function loadDashboard() {
     [allOrders, allEvents] = await Promise.all([
       window.emAuth.getAllOrdersWithEmail(),
@@ -165,6 +218,8 @@
     ]);
     wireFilters();
     renderForFilter();
+    renderFulfillment();
+    document.getElementById('filterStatus').addEventListener('change', renderFulfillment);
   }
 
   (async () => {

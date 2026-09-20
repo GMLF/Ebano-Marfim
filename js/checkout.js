@@ -226,7 +226,15 @@
         shippingCarrier: frete.transportadora,
         shippingService: frete.servico,
         shippingPrice: frete.preco,
-        shippingDays: frete.dias
+        shippingDays: frete.dias,
+        recipientName: document.getElementById('ckName').value,
+        recipientPhone: document.getElementById('ckPhone').value,
+        cep: document.getElementById('ckCep').value,
+        street: document.getElementById('ckStreet').value,
+        number: document.getElementById('ckNumber').value,
+        neighborhood: document.getElementById('ckNeighborhood').value,
+        city: document.getElementById('ckCity').value,
+        state: document.getElementById('ckState').value
       }).catch(() => {}); // checkout de visitante (sem login) simplesmente não salva histórico
       window.emAuth.logEvent('checkout_complete', { order_number: orderNumber, subtotal: currentTotal(), payment_method: payMethod });
     }
