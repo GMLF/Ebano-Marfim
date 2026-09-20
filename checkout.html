@@ -80,8 +80,8 @@
       </div>
     </div>
 
-    <div class="sim-banner reveal pending">
-      <b>Ambiente de simulação.</b> Nenhum pagamento real é processado aqui: é uma demonstração do fluxo de compra. Pra vender de verdade, essa etapa precisa de um gateway homologado (Mercado Pago, PagSeguro etc.) com CNPJ.
+    <div class="sim-banner reveal pending" id="simBanner">
+      <b>Pagamento via InfinitePay.</b> Cartão e Pix são processados numa página segura da InfinitePay, fora do nosso site — a gente nunca vê nem guarda dado de cartão. Enquanto isso não estiver configurado no servidor, esse fluxo funciona como demonstração e nenhuma cobrança real é feita.
     </div>
 
     <div id="checkoutContent">
@@ -175,48 +175,11 @@
                 <button type="button" class="pay-method active" data-pay="cartao">Cartão de crédito</button>
                 <button type="button" class="pay-method" data-pay="pix">Pix <span style="color:var(--accent);">· 5% off</span></button>
               </div>
-
-              <div class="pay-panel active" data-panel="cartao">
-                <div class="checkout-fieldrow">
-                  <div style="grid-column:1/-1;">
-                    <label for="ckCardName">Nome impresso no cartão</label>
-                    <input type="text" id="ckCardName">
-                  </div>
-                </div>
-                <div class="checkout-fieldrow">
-                  <div style="grid-column:span 2;">
-                    <label for="ckCardNumber">Número do cartão</label>
-                    <input type="text" id="ckCardNumber" placeholder="0000 0000 0000 0000" inputmode="numeric">
-                  </div>
-                  <div>
-                    <label for="ckCardExp">Validade</label>
-                    <input type="text" id="ckCardExp" placeholder="MM/AA">
-                  </div>
-                  <div>
-                    <label for="ckCardCvv">CVV</label>
-                    <input type="text" id="ckCardCvv" placeholder="000" inputmode="numeric">
-                  </div>
-                </div>
-                <div>
-                  <label for="ckInstallments">Parcelas</label>
-                  <select id="ckInstallments"></select>
-                </div>
-              </div>
-
-              <div class="pay-panel" data-panel="pix">
-                <div class="pix-box">
-                  <div class="pix-qr" aria-hidden="true"></div>
-                  <p style="font-size:.85rem; color:var(--text-dim);">Escaneie o QR code (simulado) ou copie o código abaixo no app do seu banco.</p>
-                  <div class="pix-code">
-                    <span id="pixCode">00020126ff0014BR.GOV.BCB.PIX-SIMULACAO...</span>
-                    <button type="button" id="copyPixBtn">copiar</button>
-                  </div>
-                </div>
-              </div>
+              <p style="font-size:.84rem; color:var(--text-dim);">Ao confirmar, você vai pra uma página segura da InfinitePay pra digitar os dados do cartão ou pagar via Pix — nenhum dado de pagamento passa pelo nosso site.</p>
 
               <div style="display:flex; gap:10px; margin-top:18px;">
                 <button type="button" class="btn" data-prev-step>Voltar</button>
-                <button type="submit" class="btn btn-solid" style="flex:1;">Confirmar pedido (simulação)</button>
+                <button type="submit" class="btn btn-solid" style="flex:1;" id="finalizarBtn">Ir para pagamento seguro</button>
               </div>
             </div>
           </form>
@@ -234,8 +197,8 @@
       <div class="ok-badge">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
       </div>
-      <h2>Pedido simulado nº <span id="orderNumber"></span></h2>
-      <p style="color:var(--text-dim); max-width:44ch;">Isso é uma demonstração: nenhuma cobrança real foi feita. Num site em produção, aqui você receberia a confirmação por e-mail e o acompanhamento do envio.</p>
+      <h2 id="orderSuccessTitle">Pedido nº <span id="orderNumber"></span></h2>
+      <p id="orderSuccessMsg" style="color:var(--text-dim); max-width:44ch;"></p>
       <a href="colecao.html" class="btn btn-solid">Voltar pra coleção</a>
     </div>
   </section>

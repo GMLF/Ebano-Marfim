@@ -55,7 +55,7 @@
     if (!client) return { error: NOT_CONFIGURED_MSG };
     const session = await getSession();
     if (!session) return { error: 'sem sessão' }; // checkout de visitante, não é um erro real
-    const { error } = await client.from('orders').insert({
+    const { data, error } = await client.from('orders').insert({
       user_id: session.user.id,
       order_number: order.orderNumber,
       items: order.items,
@@ -73,8 +73,8 @@
       neighborhood: order.neighborhood,
       city: order.city,
       state: order.state
-    });
-    return { error: error ? error.message : null };
+    }).select('id').single();
+    return { error: error ? error.message : null, orderId: data ? data.id : null };
   }
   async function getOrders() {
     if (!client) return [];
@@ -132,6 +132,14 @@
     if (error) return { error: 'Não foi possível calcular o frete agora.' };
     return data;
   }
+  async function criarPagamento(orderId) {
+    if (!client) return { error: NOT_CONFIGURED_MSG };
+    const { data, error } = await client.functions.invoke('criar-pagamento', {
+      body: { orderId }
+    });
+    if (error) return { error: 'Pagamento ainda não está disponível neste site.' };
+    return data;
+  }
 
   /* id anônimo por navegador — funciona mesmo sem login, pra medir até onde
      um visitante (não só clientes com conta) foi no site */
@@ -157,7 +165,7 @@
   window.emAuth = {
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
-    saveOrder, getOrders, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete
+    saveOrder, getOrders, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete, criarPagamento
   };
 
   /* reflete o estado de login no ícone de conta do cabeçalho, em todas as páginas */

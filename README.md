@@ -12,7 +12,7 @@ ebano-marfim-perfumes/
 ├── atelie.html          # As 5 etapas do decant
 ├── contato.html         # Depoimentos + newsletter
 ├── conta.html            # Login / cadastro / recuperação de senha / Google (via Supabase)
-├── checkout.html         # Checkout simulado — cartão parcelado ou Pix
+├── checkout.html         # Checkout em 3 passos — Pix/cartão via InfinitePay (simulado até configurar)
 ├── css/
 │   └── style.css        # tokens de tema (claro/escuro), layout e componentes
 ├── js/
@@ -54,13 +54,35 @@ O login/cadastro/recuperação de senha/Google **não funcionam ainda** — o si
 
 Sem esses passos, os formulários de `conta.html` mostram um aviso amarelo e uma mensagem de erro amigável em vez de travar.
 
-## Sobre o checkout (pagamento)
+## Como ativar o pagamento de verdade (Pix + cartão via InfinitePay)
 
-`checkout.html` é uma **simulação completa do fluxo de compra** — endereço, cartão com parcelamento (1x a 6x sem juros) e Pix (com 5% de desconto simulado) — mas **nenhum pagamento real é processado**. Isso é proposital e não é uma limitação a ser "corrigida" com mais código: por regra do setor (PCI-DSS), nenhum site deve capturar ou guardar número de cartão diretamente.
+Escolhemos a **InfinitePay** porque aceita conta de pessoa física (CPF, sem precisar de CNPJ/MEI) e cobre Pix + cartão numa página de pagamento hospedada por eles — ou seja, **nenhum dado de cartão passa pelo nosso site**, o que também tira a gente da parte mais pesada da regra do setor (PCI-DSS). O cliente clica em "Ir para pagamento seguro", é levado pra essa página, paga, e volta pro nosso site.
 
-Pra aceitar pagamento de verdade, o caminho é integrar um **gateway de pagamento homologado** — no Brasil, o mais comum pra cartão + Pix + parcelamento é o **Mercado Pago** (Checkout Pro ou Bricks), alternativas são PagSeguro e Pagar.me. Isso exige:
-- **CNPJ** pra abrir conta de recebimento no gateway;
-- Um **backend** que gere a cobrança com as credenciais do gateway (não dá pra fazer isso só no front-end com segurança) — o Supabase também serve pra isso via Edge Functions, ou um servidor Node simples.
+Até isso ser configurado, o checkout continua funcionando como **demonstração**: salva o pedido normalmente, mas mostra a tela de "pedido simulado" em vez de redirecionar pra um pagamento de verdade.
+
+**Como o fluxo funciona:**
+1. Cliente confirma o pedido → é salvo em `orders` com `status = 'pendente'` e o subtotal já validado pelo gatilho do banco (nunca um valor vindo do navegador).
+2. O site chama a Edge Function `criar-pagamento`, que lê o subtotal **do banco** (não do navegador) e cria a cobrança na InfinitePay, devolvendo o link da página de pagamento.
+3. Cliente é redirecionado pra lá, paga, e a InfinitePay chama a Edge Function `pagamento-webhook` confirmando o pagamento — só então o pedido vira `status = 'pago'`.
+
+**Pra ativar:**
+1. Crie uma conta gratuita na [InfinitePay](https://infinitepay.io) (aceita CPF) e procure na área de desenvolvedor/integrações do painel deles uma **chave de API** e o seu **@handle**. Se a tela não bater com isso — nomes de painel mudam — me manda um print que eu ajusto as instruções.
+2. Instale a [CLI do Supabase](https://supabase.com/docs/guides/cli), `supabase login`, `supabase link`.
+3. Configure os secrets (nunca no código):
+   ```bash
+   supabase secrets set INFINITEPAY_HANDLE=seu-usuario
+   supabase secrets set INFINITEPAY_API_KEY=sua-chave-aqui
+   supabase secrets set SITE_URL=https://gmlf.github.io/Ebano-Marfim
+   supabase secrets set WEBHOOK_SECRET=invente-uma-senha-longa-aleatoria-aqui
+   ```
+4. Publique as duas funções:
+   ```bash
+   supabase functions deploy criar-pagamento
+   supabase functions deploy pagamento-webhook
+   ```
+5. No painel da InfinitePay, se eles pedirem pra cadastrar a URL do webhook manualmente (em vez de aceitar a que mandamos na criação do pagamento), use: `https://SEU-PROJETO.supabase.co/functions/v1/pagamento-webhook?token=O-MESMO-WEBHOOK_SECRET-DE-CIMA`.
+
+**Atenção:** os nomes exatos dos campos que a API da InfinitePay espera (`order_nsu`, `handle`, formato do valor em centavos etc.) em `supabase/functions/criar-pagamento/index.ts` e `supabase/functions/pagamento-webhook/index.ts` são a melhor tentativa com base na documentação pública deles — ainda não testamos contra uma chave real. No primeiro teste, se der erro, olhe os logs em **Supabase > Edge Functions > (nome da função) > Logs** e me manda o que aparecer lá (ou a resposta de erro) que a gente ajusta junto.
 
 ## Como ativar o cálculo de frete (Correios + Jadlog via SuperFrete)
 
@@ -94,8 +116,8 @@ Os preços de decant/frasco fechado estão em `data/products.js` (campos `fullPr
 - **O total do pedido é recalculado no banco, não confia no navegador.** O checkout mostra o total calculado no cliente só pra experiência de compra, mas quem decide o valor que fica gravado é um gatilho no Postgres (`supabase/product_prices.sql`) que busca o preço real de cada item numa tabela própria (`product_prices`) e recalcula o subtotal — inclusive o desconto de 5% do Pix e o frete grátis da entrega local em Londrina. Isso existe porque, sem ele, alguém com o DevTools aberto poderia editar o preço no `localStorage` do carrinho antes de fechar o pedido.
 - **A Edge Function de frete só aceita chamadas do domínio do site** (`https://gmlf.github.io`, mais `localhost:8080` pra testar local) — antes aceitava de qualquer origem, o que deixaria outra pessoa usar sua cota do SuperFrete escondida atrás do seu token. Se um dia colocar domínio próprio, adicione ele na lista `ORIGENS_PERMITIDAS` em `supabase/functions/calcular-frete/index.ts`.
 - **A tabela de eventos de analytics (`analytics_events`) precisa aceitar registro de visitantes sem login**, então não dá pra travar totalmente quem pode escrever nela — mas `supabase/analytics_hardening.sql` limita isso a tipos de evento conhecidos e a um tamanho máximo de payload, pra impedir que alguém despeje lixo direto pela API do Supabase.
-- Segredos (chave `service_role`, senha do banco, Client Secret do Google, token do SuperFrete) nunca ficam no código — só como variável de ambiente local (`.env`, no `.gitignore`) ou secret do Supabase.
-- Os campos de cartão no checkout são só visuais: não saem do navegador, não são salvos em nenhum lugar (é simulação, ver seção acima).
+- Segredos (chave `service_role`, senha do banco, Client Secret do Google, token do SuperFrete, chave da InfinitePay, segredo do webhook) nunca ficam no código — só como variável de ambiente local (`.env`, no `.gitignore`) ou secret do Supabase.
+- **Nenhum dado de cartão passa pelo nosso site** — o pagamento acontece inteiro na página hospedada da InfinitePay (ver seção acima). O `pagamento-webhook` só aceita chamadas com o segredo certo no `?token=`, pra ninguém conseguir marcar um pedido como pago sem ter pago de verdade, e usa a `service_role` só pra essa escrita pontual (o resto do site nunca usa essa chave).
 
 Rode `supabase/product_prices.sql` e `supabase/analytics_hardening.sql` no SQL Editor do Supabase pra ativar essas duas proteções.
 
@@ -119,7 +141,7 @@ No `admin.html`, a seção **"Pedidos e envio"** lista todos os pedidos (não fi
 - **Alternador claro/escuro** no cabeçalho, persistido em `localStorage`. O tema escuro ("Ébano") tem um acabamento de mármore com veios e brilho dourado nos painéis de destaque.
 - **Login, cadastro e recuperação de senha** (e-mail/senha + Google) via Supabase — ver seção acima pra ativar.
 - **Carrinho lateral (drawer)** com foto real do produto, quantidade, remoção e subtotal, persistido em `localStorage`, acessível em qualquer página; "Finalizar seleção" leva pro checkout.
-- **Checkout simulado** com cartão parcelado ou Pix — ver seção acima.
+- **Checkout em 3 passos** (perfumes → entrega → pagamento), com frete calculado e pagamento via InfinitePay — ver seção acima.
 - **Quiz "Qual fragrância é a sua cara?"** de **10 perguntas**: cada resposta soma pontos a notas olfativas específicas, e no final cruza essas notas com o perfil real de cada fragrância e mostra um **ranking com % de afinidade** pra todo o catálogo.
 - **Carrossel de depoimentos** automático + navegação manual (página Contato).
 - **Newsletter** com validação de e-mail no front-end (sem backend real).

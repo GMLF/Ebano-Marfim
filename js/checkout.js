@@ -6,6 +6,23 @@
 
   const fmt = n => 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  function showSuccess(orderNumber, title, message) {
+    document.getElementById('checkoutContent').hidden = true;
+    document.getElementById('simBanner').hidden = true;
+    const successEl = document.getElementById('orderSuccess');
+    successEl.hidden = false;
+    document.getElementById('orderSuccessTitle').innerHTML = `${title} <span id="orderNumber">${orderNumber}</span>`;
+    document.getElementById('orderSuccessMsg').textContent = message;
+    successEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // cliente voltando da página de pagamento da InfinitePay (ver redirect_url em criar-pagamento)
+  const pedidoRetorno = new URLSearchParams(location.search).get('pedido');
+  if (pedidoRetorno) {
+    showSuccess(pedidoRetorno, 'Pedido nº', 'Recebemos seu pedido! Assim que a InfinitePay confirmar o pagamento (geralmente na hora), a gente já começa a separar o seu envio. Você pode acompanhar o status em Minha Conta.');
+    return;
+  }
+
   function loadCart() {
     try { return JSON.parse(localStorage.getItem('em-cart')) || []; }
     catch { return []; }
@@ -29,7 +46,6 @@
     </div>
   `).join('');
 
-  const installmentsSelect = document.getElementById('ckInstallments');
   const totalEl = document.getElementById('orderSummaryTotal');
   let payMethod = 'cartao';
   const PIX_DISCOUNT = 0.05;
@@ -38,12 +54,6 @@
   function currentTotal() {
     const base = payMethod === 'pix' ? subtotal * (1 - PIX_DISCOUNT) : subtotal;
     return base + (frete ? frete.preco : 0);
-  }
-  function renderInstallments() {
-    const total = currentTotal();
-    installmentsSelect.innerHTML = Array.from({ length: 6 }, (_, i) => i + 1).map(n =>
-      `<option value="${n}">${n}x de ${fmt(total / n)} sem juros</option>`
-    ).join('');
   }
   function renderTotal() {
     totalEl.textContent = fmt(currentTotal()) + (payMethod === 'pix' ? ' (com 5% off nos produtos)' : '');
@@ -56,7 +66,6 @@
       freteRow.remove();
     }
   }
-  renderInstallments();
   renderTotal();
 
   // ---- passo a passo: 1 perfumes, 2 entrega, 3 pagamento ----
@@ -174,7 +183,6 @@
     function selecionarFrete(i) {
       const op = opcoes[i];
       frete = { transportadora: op.transportadora, servico: op.servico, preco: op.preco, dias: op.dias };
-      renderInstallments();
       renderTotal();
     }
     freteOpcoesEl.querySelectorAll('input[name="freteOpcao"]').forEach(input => {
@@ -186,24 +194,11 @@
   document.querySelectorAll('.pay-method').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.pay-method').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
-      document.querySelector(`.pay-panel[data-panel="${btn.dataset.pay}"]`).classList.add('active');
       payMethod = btn.dataset.pay;
-      renderInstallments();
       renderTotal();
     });
   });
-
-  const copyPixBtn = document.getElementById('copyPixBtn');
-  if (copyPixBtn) {
-    copyPixBtn.addEventListener('click', () => {
-      const code = document.getElementById('pixCode').textContent;
-      navigator.clipboard?.writeText(code).catch(() => {});
-      copyPixBtn.textContent = 'copiado!';
-      setTimeout(() => { copyPixBtn.textContent = 'copiar'; }, 1800);
-    });
-  }
 
   document.getElementById('checkoutForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -216,9 +211,13 @@
     }
 
     const orderNumber = String(Math.floor(100000 + Math.random() * 900000));
+    const finalizarBtn = document.getElementById('finalizarBtn');
 
     if (window.emAuth && window.emAuth.isConfigured) {
-      window.emAuth.saveOrder({
+      finalizarBtn.disabled = true;
+      finalizarBtn.textContent = 'Processando...';
+
+      const { error: erroSalvar, orderId } = await window.emAuth.saveOrder({
         orderNumber,
         items: cart,
         subtotal: currentTotal(),
@@ -235,19 +234,35 @@
         neighborhood: document.getElementById('ckNeighborhood').value,
         city: document.getElementById('ckCity').value,
         state: document.getElementById('ckState').value
-      }).catch(() => {}); // checkout de visitante (sem login) simplesmente não salva histórico
+      });
+
+      // erro real (não é só "visitante sem login") — não finge sucesso, avisa e para
+      if (erroSalvar && erroSalvar !== 'sem sessão') {
+        finalizarBtn.disabled = false;
+        finalizarBtn.textContent = 'Ir para pagamento seguro';
+        alert('Não foi possível registrar o pedido: ' + erroSalvar);
+        return;
+      }
+
       window.emAuth.logEvent('checkout_complete', { order_number: orderNumber, subtotal: currentTotal(), payment_method: payMethod });
+
+      if (!erroSalvar && orderId) {
+        const pagamento = await window.emAuth.criarPagamento(orderId);
+        if (pagamento.checkoutUrl) {
+          localStorage.removeItem('em-cart');
+          window.location.href = pagamento.checkoutUrl; // vai pro pagamento de verdade na InfinitePay
+          return;
+        }
+        // InfinitePay ainda não configurado no servidor: segue como demonstração abaixo, sem travar o cliente
+      }
+
+      finalizarBtn.disabled = false;
+      finalizarBtn.textContent = 'Ir para pagamento seguro';
     }
 
     localStorage.removeItem('em-cart');
     const cartCountEl = document.getElementById('cartCount');
     if (cartCountEl) cartCountEl.hidden = true;
-
-    document.getElementById('checkoutContent').hidden = true;
-    document.querySelector('.sim-banner').hidden = true;
-    const successEl = document.getElementById('orderSuccess');
-    successEl.hidden = false;
-    document.getElementById('orderNumber').textContent = orderNumber;
-    successEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showSuccess(orderNumber, 'Pedido simulado nº', 'Isso é uma demonstração: nenhuma cobrança real foi feita. Num site em produção, você seria levado pra InfinitePay pra pagar de verdade.');
   });
 })();
