@@ -128,6 +128,15 @@ Rode `supabase/order_fulfillment.sql` no SQL Editor do Supabase. Ele adiciona:
 
 No `admin.html`, a seção **"Pedidos e envio"** lista todos os pedidos (não filtra por período, de propósito — um pedido parado há semanas ainda precisa aparecer) com o endereço de entrega e um seletor de status editável direto ali.
 
+## Avaliação do pedido (estrelas)
+
+Rode `supabase/order_reviews.sql` no SQL Editor do Supabase. Ele adiciona:
+- Colunas `rating` (1 a 5) e `rated_at` em `orders`.
+- A função `avaliar_pedido`, que só deixa o próprio dono do pedido avaliar, e só depois do status virar `entregue` — não é possível avaliar antes disso nem avaliar o pedido de outra pessoa.
+- Atualiza `admin_all_orders()` pra também trazer a nota de cada pedido.
+
+Em **Minha Conta**, todo pedido com status "Entregue" ganha um seletor de estrelas (1 a 5) — clicou, já salva, sem precisar de mais nada. Pedidos em outros status não mostram a opção de avaliar. No painel de admin, a nota aparece junto de cada pedido em "Pedidos e envio", e tem um card **"Avaliação média"** no topo do dashboard, calculado sobre os pedidos avaliados no período selecionado.
+
 ## Funcionalidades
 
 - **Navegação por páginas separadas**: Início, Coleção, Quiz, Ateliê, Contato, Minha Conta e Checkout.

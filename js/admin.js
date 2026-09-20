@@ -59,6 +59,10 @@
     const views = events.filter(e => e.event_type === 'page_view');
     document.getElementById('statViewsTotal').textContent = new Set(views.map(e => e.session_id)).size;
     document.getElementById('statVisitorsUnique').textContent = views.length;
+    const avaliados = orders.filter(o => o.rating);
+    document.getElementById('statRating').textContent = avaliados.length
+      ? (avaliados.reduce((s, o) => s + o.rating, 0) / avaliados.length).toFixed(1) + ' ★ (' + avaliados.length + ')'
+      : '—';
     document.getElementById('lastUpdated').textContent = '· atualizado agora, ' + new Date().toLocaleTimeString('pt-BR');
 
     // ---- pedidos recentes (dentro do período) ----
@@ -188,6 +192,7 @@
           ${[o.street, o.number].filter(Boolean).join(', ')}${o.neighborhood ? ' - ' + o.neighborhood : ''}<br>
           ${[o.city, o.state].filter(Boolean).join('/')}${o.cep ? ' · CEP ' + o.cep : ''}<br>
           Envio: ${o.shipping_carrier || '—'}${o.shipping_service ? ' · ' + o.shipping_service : ''}${o.shipping_price != null ? ' · ' + (o.shipping_price > 0 ? fmt(o.shipping_price) : 'Grátis') : ''}
+          ${o.rating ? `<br>Avaliação: <span class="order-rating" style="display:inline-flex;">${[1, 2, 3, 4, 5].map(n => `<span class="star${n <= o.rating ? ' filled' : ''}">★</span>`).join('')}</span>` : ''}
         </div>
       </div>
     `).join('');

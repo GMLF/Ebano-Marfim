@@ -86,6 +86,11 @@
       .order('created_at', { ascending: false });
     return error ? [] : data;
   }
+  async function avaliarPedido(orderId, nota) {
+    if (!client) return { error: NOT_CONFIGURED_MSG };
+    const { error } = await client.rpc('avaliar_pedido', { pedido_id: orderId, nota });
+    return { error: error ? error.message : null };
+  }
 
   async function isAdmin() {
     if (!client) return false;
@@ -165,7 +170,7 @@
   window.emAuth = {
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
-    saveOrder, getOrders, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete, criarPagamento
+    saveOrder, getOrders, avaliarPedido, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete, criarPagamento
   };
 
   /* reflete o estado de login no ícone de conta do cabeçalho, em todas as páginas */

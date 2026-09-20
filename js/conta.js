@@ -29,6 +29,20 @@
 
   const fmt = n => 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const ordersBox = document.getElementById('accountOrders');
+  const STATUS_LABEL = { pendente: 'Pendente', pago: 'Pago', enviado: 'Enviado', entregue: 'Entregue', cancelado: 'Cancelado' };
+
+  function estrelasHtml(o) {
+    if (o.status !== 'entregue') return '';
+    if (o.rating) {
+      return `<div class="order-rating" aria-label="Sua avaliação: ${o.rating} de 5 estrelas">
+        ${[1, 2, 3, 4, 5].map(n => `<span class="star${n <= o.rating ? ' filled' : ''}">★</span>`).join('')}
+      </div>`;
+    }
+    return `<div class="order-rating order-rating-input" data-order-id="${o.id}">
+      <span class="order-rating-label">Avalie seu pedido:</span>
+      ${[1, 2, 3, 4, 5].map(n => `<button type="button" class="star-btn" data-nota="${n}" aria-label="${n} estrela${n > 1 ? 's' : ''}">★</button>`).join('')}
+    </div>`;
+  }
 
   async function renderOrders() {
     if (!ordersBox) return;
@@ -47,11 +61,28 @@
           ${o.items.map(i => `<span>${i.name} · ${i.size === 'full' ? 'frasco' : i.size + 'ml'} ×${i.qty}</span>`).join('')}
         </div>
         <div class="order-history-foot">
-          <span>${o.payment_method === 'pix' ? 'Pix' : 'Cartão'}</span>
-          <span>${fmt(o.subtotal)}</span>
+          <span class="status-badge status-${o.status || 'pendente'}">${STATUS_LABEL[o.status] || 'Pendente'}</span>
+          <span>${o.payment_method === 'pix' ? 'Pix' : 'Cartão'} · ${fmt(o.subtotal)}</span>
         </div>
+        ${estrelasHtml(o)}
       </div>
     `).join('');
+
+    ordersBox.querySelectorAll('.order-rating-input .star-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const wrapper = btn.closest('.order-rating-input');
+        const orderId = wrapper.dataset.orderId;
+        const nota = Number(btn.dataset.nota);
+        wrapper.querySelectorAll('.star-btn').forEach(b => { b.disabled = true; });
+        const result = await window.emAuth.avaliarPedido(orderId, nota);
+        if (result.error) {
+          alert('Não deu pra registrar sua avaliação: ' + result.error);
+          wrapper.querySelectorAll('.star-btn').forEach(b => { b.disabled = false; });
+          return;
+        }
+        renderOrders(); // recarrega pra já mostrar a nota salva
+      });
+    });
   }
 
   function showAccount(session) {
