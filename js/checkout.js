@@ -49,7 +49,7 @@
     totalEl.textContent = fmt(currentTotal()) + (payMethod === 'pix' ? ' (com 5% off nos produtos)' : '');
     const freteRow = document.getElementById('freteSummaryRow');
     if (frete) {
-      const row = `<span>Frete · ${frete.transportadora} ${frete.servico}</span><span>${fmt(frete.preco)}</span>`;
+      const row = `<span>Frete · ${frete.transportadora} ${frete.servico}</span><span>${frete.preco > 0 ? fmt(frete.preco) : 'Grátis'}</span>`;
       if (freteRow) freteRow.innerHTML = row;
       else summaryItems.insertAdjacentHTML('beforeend', `<div class="order-summary-item" id="freteSummaryRow">${row}</div>`);
     } else if (freteRow) {
@@ -62,42 +62,50 @@
   const calcFreteBtn = document.getElementById('calcFreteBtn');
   const freteOpcoesEl = document.getElementById('freteOpcoes');
 
+  // entrega feita por vocês mesmos, sem transportadora — só aparece pra quem mora em Londrina
+  const ENTREGA_LOCAL = { transportadora: 'Entrega própria', servico: 'Entrega local em Londrina', preco: 0, dias: 1 };
+  function ehLondrina(cidade) {
+    return cidade.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim() === 'londrina';
+  }
+
   calcFreteBtn?.addEventListener('click', async () => {
     const cep = document.getElementById('ckCep').value.replace(/\D/g, '');
     if (cep.length !== 8) {
       freteOpcoesEl.innerHTML = '<p style="color:var(--text-faint);">Digite um CEP válido (8 números) antes de calcular.</p>';
       return;
     }
-    if (!window.emAuth || !window.emAuth.isConfigured) {
-      freteOpcoesEl.innerHTML = '<p style="color:var(--text-faint);">Frete ainda não está disponível neste site.</p>';
-      return;
-    }
     calcFreteBtn.disabled = true;
     calcFreteBtn.textContent = 'Calculando...';
     freteOpcoesEl.innerHTML = '';
 
-    const result = await window.emAuth.calcularFrete(cep, cart.map(i => ({ size: i.size, qty: i.qty })));
+    const cidade = document.getElementById('ckCity').value || '';
+    const opcoes = ehLondrina(cidade) ? [ENTREGA_LOCAL] : [];
+
+    if (window.emAuth && window.emAuth.isConfigured) {
+      const result = await window.emAuth.calcularFrete(cep, cart.map(i => ({ size: i.size, qty: i.qty })));
+      if (!result.error && result.opcoes) opcoes.push(...result.opcoes);
+    }
 
     calcFreteBtn.disabled = false;
     calcFreteBtn.textContent = 'Calcular frete pro meu CEP';
 
-    if (result.error || !result.opcoes || !result.opcoes.length) {
-      freteOpcoesEl.innerHTML = `<p style="color:var(--text-faint);">${result.error || 'Nenhuma opção de frete encontrada pra esse CEP.'}</p>`;
+    if (!opcoes.length) {
+      freteOpcoesEl.innerHTML = '<p style="color:var(--text-faint);">Nenhuma opção de frete encontrada pra esse CEP ainda — o cálculo por transportadora está sendo configurado.</p>';
       return;
     }
 
-    freteOpcoesEl.innerHTML = result.opcoes.map((op, i) => `
+    freteOpcoesEl.innerHTML = opcoes.map((op, i) => `
       <label class="pay-method" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px; cursor:pointer;">
         <span>
           <input type="radio" name="freteOpcao" value="${i}" ${i === 0 ? 'checked' : ''} style="margin-right:8px;">
           ${op.transportadora} · ${op.servico} — ${op.dias} dia(s)
         </span>
-        <b>${fmt(op.preco)}</b>
+        <b>${op.preco > 0 ? fmt(op.preco) : 'Grátis'}</b>
       </label>
     `).join('');
 
     function selecionarFrete(i) {
-      const op = result.opcoes[i];
+      const op = opcoes[i];
       frete = { transportadora: op.transportadora, servico: op.servico, preco: op.preco, dias: op.dias };
       renderInstallments();
       renderTotal();
