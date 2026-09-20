@@ -124,27 +124,6 @@
   });
   showStep(1);
 
-  // ---- preenche endereço/cidade/estado automaticamente a partir do CEP (ViaCEP, gratuito, sem login) ----
-  const cepInput = document.getElementById('ckCep');
-  let cepTimeout;
-  cepInput?.addEventListener('input', () => {
-    clearTimeout(cepTimeout);
-    const cep = cepInput.value.replace(/\D/g, '');
-    if (cep.length !== 8) return;
-    cepTimeout = setTimeout(async () => {
-      try {
-        const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const data = await resp.json();
-        if (data.erro) return;
-        document.getElementById('ckStreet').value = data.logradouro || '';
-        document.getElementById('ckNeighborhood').value = data.bairro || '';
-        document.getElementById('ckCity').value = data.localidade || '';
-        document.getElementById('ckState').value = data.uf || '';
-        document.getElementById('ckNumber').focus();
-      } catch { /* sem internet ou serviço fora do ar: cliente preenche na mão, sem travar o checkout */ }
-    }, 400);
-  });
-
   const calcFreteBtn = document.getElementById('calcFreteBtn');
   const freteOpcoesEl = document.getElementById('freteOpcoes');
 
@@ -154,7 +133,7 @@
     return cidade.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim() === 'londrina';
   }
 
-  calcFreteBtn?.addEventListener('click', async () => {
+  async function calcularFreteAgora() {
     const cep = document.getElementById('ckCep').value.replace(/\D/g, '');
     if (cep.length !== 8) {
       freteOpcoesEl.innerHTML = '<p style="color:var(--text-faint);">Digite um CEP válido (8 números) antes de calcular.</p>';
@@ -173,7 +152,7 @@
     }
 
     calcFreteBtn.disabled = false;
-    calcFreteBtn.textContent = 'Calcular frete pro meu CEP';
+    calcFreteBtn.textContent = 'Recalcular frete';
 
     if (!opcoes.length) {
       freteOpcoesEl.innerHTML = '<p style="color:var(--text-faint);">Nenhuma opção de frete encontrada pra esse CEP ainda — o cálculo por transportadora está sendo configurado.</p>';
@@ -200,6 +179,30 @@
       input.addEventListener('change', () => selecionarFrete(Number(input.value)));
     });
     selecionarFrete(0);
+  }
+  calcFreteBtn?.addEventListener('click', calcularFreteAgora);
+
+  // ---- preenche endereço/cidade/estado automaticamente a partir do CEP (ViaCEP, gratuito, sem login)
+  // e já calcula o frete em seguida, sem precisar clicar no botão ----
+  const cepInput = document.getElementById('ckCep');
+  let cepTimeout;
+  cepInput?.addEventListener('input', () => {
+    clearTimeout(cepTimeout);
+    const cep = cepInput.value.replace(/\D/g, '');
+    if (cep.length !== 8) return;
+    cepTimeout = setTimeout(async () => {
+      try {
+        const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await resp.json();
+        if (data.erro) return;
+        document.getElementById('ckStreet').value = data.logradouro || '';
+        document.getElementById('ckNeighborhood').value = data.bairro || '';
+        document.getElementById('ckCity').value = data.localidade || '';
+        document.getElementById('ckState').value = data.uf || '';
+        document.getElementById('ckNumber').focus();
+      } catch { /* sem internet ou serviço fora do ar: cliente preenche endereço na mão */ }
+      calcularFreteAgora(); // roda mesmo se o ViaCEP falhar, pra pelo menos tentar cotar com o CEP digitado
+    }, 400);
   });
 
   document.querySelectorAll('.pay-method').forEach(btn => {
