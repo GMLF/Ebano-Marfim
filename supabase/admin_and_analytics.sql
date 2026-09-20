@@ -7,6 +7,12 @@ create table if not exists public.admins (
   user_id uuid primary key references auth.users(id) on delete cascade
 );
 
+-- RLS ligado e sem nenhuma política: a tabela fica inacessível via API
+-- pra qualquer um (inclusive pra você logado) — só a função is_admin()
+-- abaixo (security definer, ignora RLS) consegue ler. Sem isso, alguém
+-- poderia listar quem é admin, ou até se auto-promover, direto pelo F12.
+alter table public.admins enable row level security;
+
 -- função que checa se quem está logado é admin — "security definer" evita
 -- problema de recursão de RLS quando outras tabelas checam isso
 create or replace function public.is_admin()

@@ -5,7 +5,10 @@
 -- poderia editar o preço no localStorage e o pedido ficaria registrado
 -- com um valor errado. Essa tabela é a fonte de verdade dos preços
 -- (espelha data/products.js) e o gatilho abaixo recalcula o subtotal
--- de cada pedido no banco, ignorando o que vier do navegador.
+-- de cada pedido no banco, ignorando o que vier do navegador. Também
+-- força todo pedido a nascer com status 'pendente' (alguém poderia,
+-- sem isso, mandar um pedido já criado como "pago" direto pela API) e
+-- nunca deixa o frete ficar negativo.
 --
 -- IMPORTANTE: sempre que mudar um preço em data/products.js, atualize
 -- os valores aqui também (rode este arquivo de novo — ele substitui
@@ -73,8 +76,10 @@ begin
   if new.shipping_carrier = 'Entrega própria' then
     new.shipping_price := 0;
   end if;
+  new.shipping_price := greatest(coalesce(new.shipping_price, 0), 0); -- nunca negativo, nem pra abater o total
 
   new.subtotal := round(total + coalesce(new.shipping_price, 0), 2);
+  new.status := 'pendente'; -- ignora qualquer status que venha do navegador: todo pedido nasce pendente, só o webhook ou o admin mudam depois
   return new;
 end;
 $$;

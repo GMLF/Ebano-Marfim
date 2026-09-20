@@ -124,6 +124,15 @@
   });
   showStep(1);
 
+  // ---- exige um telefone/WhatsApp de verdade (com DDD), não deixa passar "teste" nem afins ----
+  const phoneInput = document.getElementById('ckPhone');
+  phoneInput?.addEventListener('input', () => {
+    const digitos = phoneInput.value.replace(/\D/g, '');
+    phoneInput.setCustomValidity(
+      digitos.length >= 10 && digitos.length <= 11 ? '' : 'Digite um telefone válido, com DDD (ex.: (43) 99999-9999).'
+    );
+  });
+
   const calcFreteBtn = document.getElementById('calcFreteBtn');
   const freteOpcoesEl = document.getElementById('freteOpcoes');
 

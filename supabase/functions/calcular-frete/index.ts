@@ -67,7 +67,7 @@ Deno.serve(async req => {
 
     const token = Deno.env.get('SUPERFRETE_TOKEN');
     const origemCep = Deno.env.get('ORIGEM_CEP');
-    const contatoEmail = Deno.env.get('CONTATO_EMAIL') || 'contato@ebanoemarfim.com.br';
+    const contatoEmail = Deno.env.get('CONTATO_EMAIL') || 'ebanoemarfimoficial@gmail.com';
 
     if (!token || !origemCep) {
       return new Response(JSON.stringify({ error: 'Frete ainda não configurado no servidor.' }), {
