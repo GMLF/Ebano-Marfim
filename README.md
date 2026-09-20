@@ -62,22 +62,26 @@ Pra aceitar pagamento de verdade, o caminho é integrar um **gateway de pagament
 - **CNPJ** pra abrir conta de recebimento no gateway;
 - Um **backend** que gere a cobrança com as credenciais do gateway (não dá pra fazer isso só no front-end com segurança) — o Supabase também serve pra isso via Edge Functions, ou um servidor Node simples.
 
-## Como ativar o cálculo de frete (Correios + Jadlog via Melhor Envio)
+## Como ativar o cálculo de frete (Correios + Jadlog via SuperFrete)
+
+Correios e Jadlog direto exigem contrato comercial com CNPJ — não é opção agora. Um agregador (junta os dois num só cálculo) é o único caminho que aceita conta de pessoa física. Usamos o **SuperFrete** em vez do Melhor Envio porque o token é gerado direto no painel (sem fluxo de OAuth com app + autorização).
 
 O checkout já tem o botão "Calcular frete" e a Edge Function pronta (`supabase/functions/calcular-frete/`), só falta ligar as credenciais:
 
 1. Rode `supabase/shipping.sql` no SQL Editor do Supabase (adiciona as colunas de frete na tabela `orders`).
-2. Crie uma conta gratuita em [melhorenvio.com.br](https://melhorenvio.com.br) (aceita CPF, não precisa de CNPJ) e, no painel, gere um **token de API** (Meus Aplicativos → Gerar Token, com escopo de cotação de frete).
+2. Crie uma conta gratuita em [superfrete.com.br](https://superfrete.com.br) (aceita CPF, não precisa de CNPJ) e, no painel, em **Configurações → Integrações**, gere um **token de API** com permissão de cálculo de frete.
 3. Instale a [CLI do Supabase](https://supabase.com/docs/guides/cli) e faça o login (`supabase login`), depois `supabase link` no seu projeto.
 4. Configure os secrets da função (nunca no código, nunca commitados):
    ```bash
-   supabase secrets set MELHOR_ENVIO_TOKEN=seu-token-aqui
+   supabase secrets set SUPERFRETE_TOKEN=seu-token-aqui
    supabase secrets set ORIGEM_CEP=00000000
    supabase secrets set CONTATO_EMAIL=contato@ebanoemarfim.com.br
    ```
 5. Publique a função: `supabase functions deploy calcular-frete`.
 
-Até isso ser configurado, o botão de calcular frete mostra "Frete ainda não configurado no servidor" em vez de travar. O peso de cada item é uma **estimativa** (definida em `PESO_POR_ITEM` dentro da função) — ajuste os valores lá se pesar os produtos de verdade.
+Até isso ser configurado, o botão de calcular frete mostra "Frete ainda não configurado no servidor" em vez de travar — e a opção de entrega local grátis em Londrina continua funcionando independente disso. O peso de cada item é uma **estimativa** (definida em `PESO_POR_ITEM` dentro da função) — ajuste os valores lá se pesar os produtos de verdade. Se o endpoint da API do SuperFrete tiver mudado desde a última atualização deste projeto, me manda um print do painel deles (tela de gerar token ou a documentação da API) que a gente ajusta a função.
+
+O CEP no checkout também preenche endereço, cidade e estado automaticamente via [ViaCEP](https://viacep.com.br) (serviço público, gratuito, sem necessidade de token).
 
 ## Editar preços
 

@@ -1,16 +1,21 @@
-// Supabase Edge Function — cotação de frete via Melhor Envio (Correios + Jadlog).
+// Supabase Edge Function — cotação de frete via SuperFrete (Correios + Jadlog).
 //
-// Existe pra manter o token da API do Melhor Envio fora do navegador: o site
-// chama esta função, ela chama o Melhor Envio com o token guardado como
-// secret do projeto (nunca commitado), e devolve só as opções de frete.
+// Existe pra manter o token da API fora do navegador: o site chama esta
+// função, ela chama o SuperFrete com o token guardado como secret do
+// projeto (nunca commitado), e devolve só as opções de frete.
+//
+// Por que SuperFrete e não Melhor Envio: os dois cobrem Correios + Jadlog
+// e aceitam conta com CPF, mas o SuperFrete gera um token direto no painel
+// (Configurações > Integrações), sem o fluxo de OAuth (cadastrar app,
+// autorizar, trocar código por token) que o Melhor Envio exige hoje.
 //
 // Configuração necessária no painel do Supabase (Edge Functions > calcular-frete > Secrets),
 // NUNCA aqui no código:
-//   MELHOR_ENVIO_TOKEN  -> token gerado no painel do Melhor Envio (Bearer token)
-//   ORIGEM_CEP          -> CEP de onde os pacotes são enviados
-//   CONTATO_EMAIL       -> e-mail de contato exigido pelo Melhor Envio no User-Agent
+//   SUPERFRETE_TOKEN  -> token gerado no painel do SuperFrete
+//   ORIGEM_CEP        -> CEP de onde os pacotes são enviados
+//   CONTATO_EMAIL     -> e-mail de contato exigido no cabeçalho User-Agent
 
-const MELHOR_ENVIO_URL = 'https://www.melhorenvio.com.br/api/v2/me/shipment/calculate';
+const SUPERFRETE_URL = 'https://api.superfrete.com/api/v0/calculator';
 
 // Peso aproximado (kg) já considerando embalagem, por tipo de item vendido.
 // São estimativas — ajuste aqui se pesar os produtos de verdade na balança.
@@ -50,7 +55,7 @@ Deno.serve(async req => {
       }, 0)
     );
 
-    const token = Deno.env.get('MELHOR_ENVIO_TOKEN');
+    const token = Deno.env.get('SUPERFRETE_TOKEN');
     const origemCep = Deno.env.get('ORIGEM_CEP');
     const contatoEmail = Deno.env.get('CONTATO_EMAIL') || 'contato@ebanoemarfim.com.br';
 
@@ -61,7 +66,7 @@ Deno.serve(async req => {
       });
     }
 
-    const resposta = await fetch(MELHOR_ENVIO_URL, {
+    const resposta = await fetch(SUPERFRETE_URL, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

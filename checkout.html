@@ -85,10 +85,25 @@
     </div>
 
     <div id="checkoutContent">
+      <div class="checkout-steps" id="checkoutSteps">
+        <span class="checkout-step-pill active" data-step-pill="1"><b>1</b> Perfumes</span>
+        <span class="checkout-step-pill" data-step-pill="2"><b>2</b> Entrega</span>
+        <span class="checkout-step-pill" data-step-pill="3"><b>3</b> Pagamento</span>
+      </div>
+
       <div class="checkout-grid reveal pending">
         <div>
           <form id="checkoutForm">
-            <div class="checkout-card">
+
+            <!-- Passo 1: revisar o pedido -->
+            <div class="checkout-card" data-step="1">
+              <h3>Confira sua seleção</h3>
+              <p style="color:var(--text-dim); font-size:.9rem;">Os perfumes escolhidos estão listados ao lado, com o total até aqui. Precisa mudar algo antes de continuar? <a href="colecao.html" style="color:var(--accent);">Volte pra coleção</a>.</p>
+              <button type="button" class="btn btn-solid" style="width:100%; margin-top:16px;" data-next-step>Continuar para entrega</button>
+            </div>
+
+            <!-- Passo 2: entrega -->
+            <div class="checkout-card" data-step="2" hidden>
               <h3>Dados de entrega</h3>
               <div class="checkout-fieldrow">
                 <div style="grid-column:1/-1;">
@@ -112,7 +127,7 @@
                   <input type="text" id="ckCep" placeholder="00000-000" inputmode="numeric" required>
                 </div>
                 <div style="grid-column:span 2;">
-                  <label for="ckAddress">Endereço</label>
+                  <label for="ckAddress">Endereço (rua, número, bairro)</label>
                   <input type="text" id="ckAddress" required>
                 </div>
               </div>
@@ -126,15 +141,21 @@
                   <input type="text" id="ckState" maxlength="2" placeholder="SP" required>
                 </div>
               </div>
+              <p style="font-size:.76rem; color:var(--text-faint); margin-top:-4px;">Preenchemos endereço, cidade e estado automaticamente a partir do CEP — só confira e complete o número.</p>
             </div>
 
-            <div class="checkout-card">
+            <div class="checkout-card" data-step="2" hidden>
               <h3>Frete</h3>
               <button type="button" class="btn" id="calcFreteBtn" style="width:100%;">Calcular frete pro meu CEP</button>
               <div id="freteOpcoes" style="margin-top:14px;"></div>
+              <div style="display:flex; gap:10px; margin-top:18px;">
+                <button type="button" class="btn" data-prev-step>Voltar</button>
+                <button type="button" class="btn btn-solid" style="flex:1;" data-next-step>Continuar para pagamento</button>
+              </div>
             </div>
 
-            <div class="checkout-card">
+            <!-- Passo 3: pagamento -->
+            <div class="checkout-card" data-step="3" hidden>
               <h3>Forma de pagamento</h3>
               <div class="pay-methods">
                 <button type="button" class="pay-method active" data-pay="cartao">Cartão de crédito</button>
@@ -178,9 +199,12 @@
                   </div>
                 </div>
               </div>
-            </div>
 
-            <button type="submit" class="btn btn-solid" style="width:100%; margin-top:8px;">Confirmar pedido (simulação)</button>
+              <div style="display:flex; gap:10px; margin-top:18px;">
+                <button type="button" class="btn" data-prev-step>Voltar</button>
+                <button type="submit" class="btn btn-solid" style="flex:1;">Confirmar pedido (simulação)</button>
+              </div>
+            </div>
           </form>
         </div>
 

@@ -59,6 +59,57 @@
   renderInstallments();
   renderTotal();
 
+  // ---- passo a passo: 1 perfumes, 2 entrega, 3 pagamento ----
+  let currentStep = 1;
+  function showStep(n) {
+    document.querySelectorAll('[data-step]').forEach(el => { el.hidden = Number(el.dataset.step) !== n; });
+    document.querySelectorAll('[data-step-pill]').forEach(el => {
+      const pillStep = Number(el.dataset.stepPill);
+      el.classList.toggle('active', pillStep === n);
+      el.classList.toggle('done', pillStep < n);
+    });
+    currentStep = n;
+    document.getElementById('checkoutSteps').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function validateStep(n) {
+    const fields = document.querySelectorAll(`[data-step="${n}"] input[required]`);
+    for (const field of fields) {
+      if (!field.checkValidity()) { field.reportValidity(); return false; }
+    }
+    if (n === 2 && !frete) {
+      freteOpcoesEl.innerHTML = '<p style="color:var(--accent);">Calcule e escolha uma opção de frete antes de continuar.</p>';
+      freteOpcoesEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    return true;
+  }
+  document.querySelectorAll('[data-next-step]').forEach(btn => {
+    btn.addEventListener('click', () => { if (validateStep(currentStep)) showStep(currentStep + 1); });
+  });
+  document.querySelectorAll('[data-prev-step]').forEach(btn => {
+    btn.addEventListener('click', () => showStep(currentStep - 1));
+  });
+  showStep(1);
+
+  // ---- preenche endereço/cidade/estado automaticamente a partir do CEP (ViaCEP, gratuito, sem login) ----
+  const cepInput = document.getElementById('ckCep');
+  let cepTimeout;
+  cepInput?.addEventListener('input', () => {
+    clearTimeout(cepTimeout);
+    const cep = cepInput.value.replace(/\D/g, '');
+    if (cep.length !== 8) return;
+    cepTimeout = setTimeout(async () => {
+      try {
+        const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await resp.json();
+        if (data.erro) return;
+        document.getElementById('ckAddress').value = [data.logradouro, data.bairro].filter(Boolean).join(', ');
+        document.getElementById('ckCity').value = data.localidade || '';
+        document.getElementById('ckState').value = data.uf || '';
+      } catch { /* sem internet ou serviço fora do ar: cliente preenche na mão, sem travar o checkout */ }
+    }, 400);
+  });
+
   const calcFreteBtn = document.getElementById('calcFreteBtn');
   const freteOpcoesEl = document.getElementById('freteOpcoes');
 
@@ -142,8 +193,9 @@
     e.preventDefault();
 
     if (!frete) {
-      freteOpcoesEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showStep(2);
       freteOpcoesEl.innerHTML = '<p style="color:var(--accent);">Calcule e escolha uma opção de frete antes de confirmar o pedido.</p>';
+      freteOpcoesEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
