@@ -38,8 +38,12 @@ begin
 end;
 $$;
 
--- Atualiza a função que lista pedidos pro admin, agora trazendo status e endereço
-create or replace function public.admin_all_orders()
+-- Atualiza a função que lista pedidos pro admin, agora trazendo status e endereço.
+-- Precisa apagar a versão antiga primeiro porque o Postgres não deixa trocar
+-- o formato de retorno de uma função só com "or replace".
+drop function if exists public.admin_all_orders();
+
+create function public.admin_all_orders()
 returns table(
   id uuid,
   order_number text,
