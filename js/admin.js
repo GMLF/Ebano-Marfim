@@ -49,13 +49,19 @@
     return d.getTime() >= Date.now() - filter.value * DAY_MS;
   }
 
+  const STATUS_LABEL_CURTO = { pendente: 'Pendente', pago: 'Pago', enviado: 'Enviado', entregue: 'Entregue', cancelado: 'Cancelado' };
+
   function renderForFilter() {
     const orders = allOrders.filter(o => matchesFilter(o.created_at, currentFilter));
     const events = allEvents.filter(e => matchesFilter(e.created_at, currentFilter));
+    // faturamento e vendas só contam pedido confirmado — "pendente" ainda não
+    // foi pago de verdade (a InfinitePay não confirmou via webhook), e
+    // "cancelado" não deve contar como venda.
+    const confirmados = orders.filter(o => ['pago', 'enviado', 'entregue'].includes(o.status));
 
     // ---- faturamento, pedidos, acessos (por usuário, não por página), páginas visualizadas ----
-    document.getElementById('statRevenue').textContent = fmt(orders.reduce((s, o) => s + Number(o.subtotal), 0));
-    document.getElementById('statOrders').textContent = orders.length;
+    document.getElementById('statRevenue').textContent = fmt(confirmados.reduce((s, o) => s + Number(o.subtotal), 0));
+    document.getElementById('statOrders').textContent = confirmados.length;
     const views = events.filter(e => e.event_type === 'page_view');
     document.getElementById('statViewsTotal').textContent = new Set(views.map(e => e.session_id)).size;
     document.getElementById('statVisitorsUnique').textContent = views.length;
@@ -65,22 +71,22 @@
       : '—';
     document.getElementById('lastUpdated').textContent = '· atualizado agora, ' + new Date().toLocaleTimeString('pt-BR');
 
-    // ---- pedidos recentes (dentro do período) ----
+    // ---- pedidos confirmados recentes (dentro do período) ----
     const recentBox = document.getElementById('recentOrders');
-    if (!orders.length) {
-      recentBox.innerHTML = '<p style="color:var(--text-faint);">Nenhum pedido nesse período.</p>';
+    if (!confirmados.length) {
+      recentBox.innerHTML = '<p style="color:var(--text-faint);">Nenhum pedido confirmado nesse período.</p>';
     } else {
-      recentBox.innerHTML = orders.slice(0, 10).map(o => `
+      recentBox.innerHTML = confirmados.slice(0, 10).map(o => `
         <div class="order-summary-item">
-          <span>#${o.order_number} · ${new Date(o.created_at).toLocaleDateString('pt-BR')} · ${o.payment_method === 'pix' ? 'Pix' : 'Cartão'}</span>
+          <span>#${o.order_number} · ${new Date(o.created_at).toLocaleDateString('pt-BR')} · ${o.payment_method === 'pix' ? 'Pix' : 'Cartão'} · <span class="status-badge status-${o.status}">${STATUS_LABEL_CURTO[o.status]}</span></span>
           <span>${fmt(o.subtotal)}</span>
         </div>
       `).join('');
     }
 
-    // ---- perfumes mais vendidos ----
+    // ---- perfumes mais vendidos (só pedidos confirmados) ----
     const qtyByProduct = new Map();
-    orders.forEach(o => (o.items || []).forEach(i => {
+    confirmados.forEach(o => (o.items || []).forEach(i => {
       qtyByProduct.set(i.name, (qtyByProduct.get(i.name) || 0) + (i.qty || 1));
     }));
     const topProductsRows = Array.from(qtyByProduct, ([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count);
@@ -93,9 +99,9 @@
     const productViews = events.filter(e => e.event_type === 'product_view');
     renderRankList(document.getElementById('topClicks'), countBy(productViews, e => e.payload && e.payload.name), 'key', 'cliques');
 
-    // ---- clientes que mais compraram (calculado no cliente, mesmo dado dos pedidos) ----
+    // ---- clientes que mais compraram (só pedidos confirmados) ----
     const spentByEmail = new Map();
-    orders.forEach(o => {
+    confirmados.forEach(o => {
       const cur = spentByEmail.get(o.email) || { total_spent: 0, order_count: 0 };
       cur.total_spent += Number(o.subtotal);
       cur.order_count += 1;
