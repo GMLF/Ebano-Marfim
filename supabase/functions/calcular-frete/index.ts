@@ -1,13 +1,10 @@
-// Supabase Edge Function — cotação de frete via SuperFrete (Correios + Jadlog).
+// Supabase Edge Function — cotação de frete via SuperFrete (Correios,
+// Jadlog, J&T, Loggi). Formato de requisição/resposta conferido contra a
+// documentação oficial (superfrete.readme.io) — não é mais uma suposição.
 //
 // Existe pra manter o token da API fora do navegador: o site chama esta
 // função, ela chama o SuperFrete com o token guardado como secret do
 // projeto (nunca commitado), e devolve só as opções de frete.
-//
-// Por que SuperFrete e não Melhor Envio: os dois cobrem Correios + Jadlog
-// e aceitam conta com CPF, mas o SuperFrete gera um token direto no painel
-// (Configurações > Integrações), sem o fluxo de OAuth (cadastrar app,
-// autorizar, trocar código por token) que o Melhor Envio exige hoje.
 //
 // Configuração necessária no painel do Supabase (Edge Functions > calcular-frete > Secrets),
 // NUNCA aqui no código:
@@ -90,6 +87,7 @@ Deno.serve(async req => {
       body: JSON.stringify({
         from: { postal_code: origemCep },
         to: { postal_code: String(cepDestino).replace(/\D/g, '') },
+        services: '1,2,17,3,33,31', // PAC, SEDEX, Mini Envios, Jadlog, J&T, Loggi
         package: {
           height: CAIXA_PADRAO.altura,
           width: CAIXA_PADRAO.largura,
@@ -108,7 +106,7 @@ Deno.serve(async req => {
     }
 
     const opcoes = cotacoes
-      .filter((c: any) => !c.error && c.price)
+      .filter((c: any) => !c.has_error && c.price)
       .map((c: any) => ({
         id: c.id,
         transportadora: c.company?.name ?? '',
