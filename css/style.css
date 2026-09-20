@@ -1293,14 +1293,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .checkout-step-pill.reachable{ cursor:pointer; }
 .checkout-step-pill.reachable:hover{ color:var(--text); }
 .step-dot{
-  display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px;
-  border-radius:50%; background:var(--line-strong); color:var(--text-faint); font-size:.72rem; font-weight:600;
+  display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px;
+  border-radius:50%; background:var(--line-strong); color:var(--text-faint);
   transition:background .3s, color .3s;
 }
+.step-dot svg{ width:15px; height:15px; }
+.step-dot .step-check{ display:none; }
 .checkout-step-pill.active{ color:var(--text); font-weight:500; }
 .checkout-step-pill.active .step-dot{ background:var(--success); color:#fff; }
 .checkout-step-pill.done{ color:var(--text-dim); }
 .checkout-step-pill.done .step-dot{ background:var(--success); color:#fff; }
+.checkout-step-pill.done .step-dot .step-icon{ display:none; }
+.checkout-step-pill.done .step-dot .step-check{ display:block; }
 .step-line{ width:36px; height:2px; background:var(--line-strong); margin:0 4px; transition:background .3s; flex-shrink:0; }
 .step-line.done{ background:var(--success); }
 @media (max-width:480px){ .step-line{ width:14px; } .step-label{ display:none; } }

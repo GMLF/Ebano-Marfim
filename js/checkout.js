@@ -90,7 +90,6 @@
       el.classList.toggle('active', pillStep === n);
       el.classList.toggle('done', pillStep < n);
       el.classList.toggle('reachable', pillStep <= maxStepReached);
-      el.querySelector('.step-dot').textContent = pillStep < n ? '✓' : String(pillStep);
     });
     document.querySelectorAll('[data-step-line]').forEach(el => {
       el.classList.toggle('done', Number(el.dataset.stepLine) < n);
