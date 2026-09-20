@@ -103,9 +103,11 @@
         const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
         const data = await resp.json();
         if (data.erro) return;
-        document.getElementById('ckAddress').value = [data.logradouro, data.bairro].filter(Boolean).join(', ');
+        document.getElementById('ckStreet').value = data.logradouro || '';
+        document.getElementById('ckNeighborhood').value = data.bairro || '';
         document.getElementById('ckCity').value = data.localidade || '';
         document.getElementById('ckState').value = data.uf || '';
+        document.getElementById('ckNumber').focus();
       } catch { /* sem internet ou serviço fora do ar: cliente preenche na mão, sem travar o checkout */ }
     }, 400);
   });
@@ -146,12 +148,12 @@
     }
 
     freteOpcoesEl.innerHTML = opcoes.map((op, i) => `
-      <label class="pay-method" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px; cursor:pointer;">
+      <label class="frete-option">
         <span>
-          <input type="radio" name="freteOpcao" value="${i}" ${i === 0 ? 'checked' : ''} style="margin-right:8px;">
-          ${op.transportadora} · ${op.servico} — ${op.dias} dia(s)
+          <input type="radio" name="freteOpcao" value="${i}" ${i === 0 ? 'checked' : ''}>
+          <b>${op.transportadora}</b> · ${op.servico} — ${op.dias} dia(s)
         </span>
-        <b>${op.preco > 0 ? fmt(op.preco) : 'Grátis'}</b>
+        <span class="frete-price${op.preco === 0 ? ' is-gratis' : ''}">${op.preco > 0 ? fmt(op.preco) : 'Grátis'}</span>
       </label>
     `).join('');
 
