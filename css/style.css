@@ -385,7 +385,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 .hamburger{ display:none; }
 
-@media (max-width: 860px){
+@media (max-width: 1000px){
   .nav-links{ display:none; }
   .hamburger{
     display:grid; place-items:center;
