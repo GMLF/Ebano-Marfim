@@ -85,7 +85,19 @@ O CEP no checkout também preenche endereço, cidade e estado automaticamente vi
 
 ## Editar preços
 
-Os preços de decant/frasco fechado estão em `js/script.js`, no topo do arquivo, no array `PRODUCTS` (campos `fullPrice` e `decants: {3, 5, 10}`). Estão como **placeholder** — troque pelos custos reais quando você os definir.
+Os preços de decant/frasco fechado estão em `data/products.js` (campos `fullPrice` e `decants: {3, 5, 10}` de cada produto).
+
+**Importante:** o servidor também guarda uma cópia desses preços em `supabase/product_prices.sql`, usada pra recalcular o total de cada pedido de verdade (ver seção de Segurança abaixo). Sempre que mudar um preço aqui, atualize o valor correspondente nesse arquivo e rode ele de novo no SQL Editor do Supabase — senão o pedido é salvo com o preço antigo.
+
+## Segurança
+
+- **O total do pedido é recalculado no banco, não confia no navegador.** O checkout mostra o total calculado no cliente só pra experiência de compra, mas quem decide o valor que fica gravado é um gatilho no Postgres (`supabase/product_prices.sql`) que busca o preço real de cada item numa tabela própria (`product_prices`) e recalcula o subtotal — inclusive o desconto de 5% do Pix e o frete grátis da entrega local em Londrina. Isso existe porque, sem ele, alguém com o DevTools aberto poderia editar o preço no `localStorage` do carrinho antes de fechar o pedido.
+- **A Edge Function de frete só aceita chamadas do domínio do site** (`https://gmlf.github.io`, mais `localhost:8080` pra testar local) — antes aceitava de qualquer origem, o que deixaria outra pessoa usar sua cota do SuperFrete escondida atrás do seu token. Se um dia colocar domínio próprio, adicione ele na lista `ORIGENS_PERMITIDAS` em `supabase/functions/calcular-frete/index.ts`.
+- **A tabela de eventos de analytics (`analytics_events`) precisa aceitar registro de visitantes sem login**, então não dá pra travar totalmente quem pode escrever nela — mas `supabase/analytics_hardening.sql` limita isso a tipos de evento conhecidos e a um tamanho máximo de payload, pra impedir que alguém despeje lixo direto pela API do Supabase.
+- Segredos (chave `service_role`, senha do banco, Client Secret do Google, token do SuperFrete) nunca ficam no código — só como variável de ambiente local (`.env`, no `.gitignore`) ou secret do Supabase.
+- Os campos de cartão no checkout são só visuais: não saem do navegador, não são salvos em nenhum lugar (é simulação, ver seção acima).
+
+Rode `supabase/product_prices.sql` e `supabase/analytics_hardening.sql` no SQL Editor do Supabase pra ativar essas duas proteções.
 
 ## Funcionalidades
 

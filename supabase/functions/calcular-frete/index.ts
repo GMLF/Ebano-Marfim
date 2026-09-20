@@ -29,12 +29,25 @@ const PESO_POR_ITEM: Record<string, number> = {
 // Caixa pequena padrão (cm) — cobre a maioria dos pedidos de decant.
 const CAIXA_PADRAO = { altura: 4, largura: 12, comprimento: 16 };
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
-};
+// Só o nosso próprio site (e o ambiente local de testes) pode chamar esta função.
+// Sem essa lista, qualquer outra página poderia usar nossa cota do SuperFrete escondida.
+const ORIGENS_PERMITIDAS = new Set([
+  'https://gmlf.github.io',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080'
+]);
+
+function corsHeadersPara(origin: string | null) {
+  const origemPermitida = origin && ORIGENS_PERMITIDAS.has(origin) ? origin : 'https://gmlf.github.io';
+  return {
+    'Access-Control-Allow-Origin': origemPermitida,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    Vary: 'Origin'
+  };
+}
 
 Deno.serve(async req => {
+  const corsHeaders = corsHeadersPara(req.headers.get('origin'));
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
