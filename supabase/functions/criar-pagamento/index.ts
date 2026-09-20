@@ -1,24 +1,21 @@
-// Supabase Edge Function — cria uma cobrança na InfinitePay (Pix + cartão)
-// pra um pedido que já existe no banco, e devolve o link da página de
-// pagamento hospedada por eles. O cliente é redirecionado pra lá; nenhum
-// dado de cartão passa pelo nosso site (menos escopo de PCI-DSS pra nós).
+// Supabase Edge Function — cria um link de pagamento na InfinitePay
+// (Pix + cartão) pra um pedido que já existe no banco, e devolve esse
+// link. O cliente é redirecionado pra lá; nenhum dado de cartão passa
+// pelo nosso site (menos escopo de PCI-DSS pra nós).
 //
 // O valor cobrado é sempre o `subtotal` já gravado no pedido — nunca um
 // valor vindo do navegador nesta chamada. Esse subtotal já foi validado
 // no insert do pedido pelo gatilho calcular_subtotal_pedido (ver
 // supabase/product_prices.sql), então aqui só confiamos no banco.
 //
-// IMPORTANTE: os nomes exatos dos campos da API da InfinitePay abaixo são
-// a melhor tentativa com base na documentação pública deles — ainda não
-// testamos contra uma chave de API real. Se der erro na primeira tentativa,
-// me manda a resposta de erro (ou um print da documentação deles em
-// developers.infinitepay.io) que a gente ajusta os nomes dos campos juntos.
+// A API de "Checkout Integrado" da InfinitePay não usa chave de API —
+// só o seu handle (@usuario) identifica a conta que recebe o pagamento.
+// Baseado na documentação interativa deles (Checkout > Documentação).
 //
 // Secrets necessários (Supabase > Edge Functions > criar-pagamento > Secrets):
-//   INFINITEPAY_HANDLE   -> seu @usuario da InfinitePay
-//   INFINITEPAY_API_KEY  -> chave de API gerada no painel deles
-//   SITE_URL             -> https://gmlf.github.io/Ebano-Marfim (sem barra no final)
-//   WEBHOOK_SECRET        -> um segredo que você mesmo inventa (ex.: uma senha longa aleatória)
+//   INFINITEPAY_HANDLE  -> seu handle, sem o "$" (ex.: guilherme-moreira-107)
+//   SITE_URL            -> https://gmlf.github.io/Ebano-Marfim (sem barra no final)
+//   WEBHOOK_SECRET      -> um segredo que você mesmo inventa (uma senha longa aleatória)
 // SUPABASE_URL e SUPABASE_ANON_KEY já existem automaticamente em toda Edge Function.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0';
@@ -72,23 +69,19 @@ Deno.serve(async req => {
     if (erroPedido || !pedido) return erro(404, 'Pedido não encontrado.');
 
     const handle = Deno.env.get('INFINITEPAY_HANDLE');
-    const apiKey = Deno.env.get('INFINITEPAY_API_KEY');
     const siteUrl = Deno.env.get('SITE_URL');
     const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
 
-    if (!handle || !apiKey || !siteUrl || !webhookSecret) {
+    if (!handle || !siteUrl || !webhookSecret) {
       return erro(503, 'Pagamento ainda não configurado no servidor.');
     }
 
-    const resposta = await fetch('https://api.infinitepay.io/invoices/public/checkout/links', {
+    const resposta = await fetch('https://api.checkout.infinitepay.io/links', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         handle,
-        order_nsu: pedido.id,
+        order_nsu: pedido.order_number,
         redirect_url: `${siteUrl}/checkout.html?pedido=${pedido.order_number}`,
         webhook_url: `${supabaseUrl}/functions/v1/pagamento-webhook?token=${webhookSecret}`,
         items: [
@@ -106,14 +99,21 @@ Deno.serve(async req => {
     });
 
     const dados = await resposta.json();
-    if (!resposta.ok || !dados.url) {
+    // A documentação não mostrou o formato exato da resposta — tentamos os
+    // nomes de campo mais prováveis. Se nenhum bater, dá pra ver a resposta
+    // real nos logs desta função (Supabase > Edge Functions > Logs) e ajustar aqui.
+    const checkoutUrl = dados.url || dados.checkout_url || dados.link || dados.payment_url;
+
+    if (!resposta.ok || !checkoutUrl) {
+      console.error('[criar-pagamento] resposta inesperada da InfinitePay:', JSON.stringify(dados));
       return erro(502, 'Não foi possível criar o pagamento agora.');
     }
 
-    return new Response(JSON.stringify({ checkoutUrl: dados.url }), {
+    return new Response(JSON.stringify({ checkoutUrl }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
-  } catch {
+  } catch (e) {
+    console.error('[criar-pagamento] erro:', e);
     return erro(400, 'Requisição inválida.');
   }
 });

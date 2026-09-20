@@ -1,21 +1,20 @@
 // Supabase Edge Function — recebe o aviso da InfinitePay quando um
-// pagamento é confirmado, e marca o pedido correspondente como "pago".
+// pagamento é aprovado, e marca o pedido correspondente como "pago".
+//
+// Segundo a documentação da InfinitePay, esse webhook só é chamado
+// QUANDO O PAGAMENTO JÁ FOI APROVADO — não existe um campo de "status"
+// no corpo pra checar, o próprio disparo do webhook é a confirmação.
+// O pedido é encontrado pelo order_nsu, que enviamos como sendo o
+// order_number do pedido (ver criar-pagamento/index.ts).
 //
 // Segurança: essa URL é pública na internet (a InfinitePay precisa
 // conseguir chamá-la de fora). Por isso só aceitamos a chamada se vier
 // com o segredo certo no parâmetro ?token= — sem isso, qualquer um
 // poderia tentar marcar um pedido como pago sem ter pago de verdade.
+// Também conferimos se o valor pago bate com o subtotal do pedido antes
+// de confirmar, como uma segunda camada de proteção.
 // Usa a service_role (só existe aqui no servidor, nunca no navegador)
-// porque quem chama isso é a InfinitePay, não o cliente logado — não
-// dá pra usar a sessão de ninguém pra essa escrita.
-//
-// IMPORTANTE: os nomes dos campos do corpo do webhook (order_nsu, status)
-// são a melhor tentativa com base na documentação pública da InfinitePay —
-// ainda não vimos um webhook real chegando. Assim que configurar e testar
-// um pagamento de verdade, se o status não bater no pedido, me manda o
-// payload que a InfinitePay realmente envia (dá pra ver nos logs da
-// função, em Supabase > Edge Functions > pagamento-webhook > Logs) que a
-// gente ajusta os nomes dos campos.
+// porque quem chama isso é a InfinitePay, não o cliente logado.
 //
 // Secret necessário (Supabase > Edge Functions > pagamento-webhook > Secrets):
 //   WEBHOOK_SECRET -> o MESMO valor configurado em criar-pagamento
@@ -35,24 +34,39 @@ Deno.serve(async req => {
     const corpo = await req.json();
     console.log('[pagamento-webhook] payload recebido:', JSON.stringify(corpo));
 
-    const orderId = corpo.order_nsu || corpo.data?.order_nsu || corpo.nsu;
-    const statusBruto = String(corpo.status || corpo.data?.status || '').toLowerCase();
-    const statusConfirmado = ['paid', 'approved', 'completed', 'success'].includes(statusBruto);
+    const orderNsu = corpo.order_nsu;
+    const valorPagoCentavos = Number(corpo.paid_amount ?? corpo.amount);
 
-    if (!orderId || !statusConfirmado) {
-      return new Response('ignorado (status não confirmado ou sem order_nsu)', { status: 200 });
+    if (!orderNsu || !valorPagoCentavos) {
+      return new Response('ignorado (sem order_nsu ou valor)', { status: 200 });
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const admin = createClient(supabaseUrl, serviceRoleKey);
 
-    const { error } = await admin
+    const { data: pedido } = await admin
       .from('orders')
-      .update({ status: 'pago' })
-      .eq('id', orderId)
-      .eq('status', 'pendente'); // não sobrescreve um pedido já enviado/cancelado manualmente
+      .select('id, subtotal, status')
+      .eq('order_number', orderNsu)
+      .single();
 
+    if (!pedido) {
+      console.error('[pagamento-webhook] pedido não encontrado pra order_nsu:', orderNsu);
+      return new Response('pedido não encontrado', { status: 200 }); // 200 pra não ficar tentando de novo
+    }
+
+    const valorEsperadoCentavos = Math.round(Number(pedido.subtotal) * 100);
+    if (valorPagoCentavos !== valorEsperadoCentavos) {
+      console.error(`[pagamento-webhook] valor pago (${valorPagoCentavos}) diferente do esperado (${valorEsperadoCentavos}) pro pedido ${orderNsu} — não confirmado automaticamente.`);
+      return new Response('valor não confere', { status: 200 });
+    }
+
+    if (pedido.status !== 'pendente') {
+      return new Response('ok (já processado)', { status: 200 });
+    }
+
+    const { error } = await admin.from('orders').update({ status: 'pago' }).eq('id', pedido.id);
     if (error) {
       console.error('[pagamento-webhook] erro ao atualizar pedido:', error.message);
       return new Response('erro ao atualizar pedido', { status: 500 });

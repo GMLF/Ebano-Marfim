@@ -6,20 +6,31 @@
 
   const fmt = n => 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  function showSuccess(orderNumber, title, message) {
+  function showSuccess(orderNumber, title, message, receiptUrl) {
     document.getElementById('checkoutContent').hidden = true;
     document.getElementById('simBanner').hidden = true;
     const successEl = document.getElementById('orderSuccess');
     successEl.hidden = false;
     document.getElementById('orderSuccessTitle').innerHTML = `${title} <span id="orderNumber">${orderNumber}</span>`;
     document.getElementById('orderSuccessMsg').textContent = message;
+    const receiptBox = document.getElementById('orderReceiptLink');
+    if (receiptBox) {
+      if (receiptUrl) { receiptBox.href = receiptUrl; receiptBox.hidden = false; }
+      else receiptBox.hidden = true;
+    }
     successEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // cliente voltando da página de pagamento da InfinitePay (ver redirect_url em criar-pagamento)
-  const pedidoRetorno = new URLSearchParams(location.search).get('pedido');
+  const paramsRetorno = new URLSearchParams(location.search);
+  const pedidoRetorno = paramsRetorno.get('pedido');
   if (pedidoRetorno) {
-    showSuccess(pedidoRetorno, 'Pedido nº', 'Recebemos seu pedido! Assim que a InfinitePay confirmar o pagamento (geralmente na hora), a gente já começa a separar o seu envio. Você pode acompanhar o status em Minha Conta.');
+    showSuccess(
+      pedidoRetorno,
+      'Pedido nº',
+      'Recebemos seu pedido! Assim que a InfinitePay confirmar o pagamento (geralmente na hora), a gente já começa a separar o seu envio. Você pode acompanhar o status em Minha Conta.',
+      paramsRetorno.get('receipt_url')
+    );
     return;
   }
 

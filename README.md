@@ -65,13 +65,14 @@ Até isso ser configurado, o checkout continua funcionando como **demonstração
 2. O site chama a Edge Function `criar-pagamento`, que lê o subtotal **do banco** (não do navegador) e cria a cobrança na InfinitePay, devolvendo o link da página de pagamento.
 3. Cliente é redirecionado pra lá, paga, e a InfinitePay chama a Edge Function `pagamento-webhook` confirmando o pagamento — só então o pedido vira `status = 'pago'`.
 
+A API de "Checkout Integrado" da InfinitePay (painel deles: **Checkout → Documentação**) **não usa chave de API** — só o seu handle (o `@usuario`, sem o `$`) identifica a conta que recebe. Isso já foi conferido na documentação oficial deles, então é o formato certo (diferente do frete, aqui não é só uma tentativa).
+
 **Pra ativar:**
-1. Crie uma conta gratuita na [InfinitePay](https://infinitepay.io) (aceita CPF) e procure na área de desenvolvedor/integrações do painel deles uma **chave de API** e o seu **@handle**. Se a tela não bater com isso — nomes de painel mudam — me manda um print que eu ajusto as instruções.
+1. Rode `supabase/orders_unique_number.sql` no SQL Editor do Supabase (garante que `order_number` seja único, já que agora ele é usado pra casar a confirmação de pagamento com o pedido certo).
 2. Instale a [CLI do Supabase](https://supabase.com/docs/guides/cli), `supabase login`, `supabase link`.
 3. Configure os secrets (nunca no código):
    ```bash
-   supabase secrets set INFINITEPAY_HANDLE=seu-usuario
-   supabase secrets set INFINITEPAY_API_KEY=sua-chave-aqui
+   supabase secrets set INFINITEPAY_HANDLE=guilherme-moreira-107
    supabase secrets set SITE_URL=https://gmlf.github.io/Ebano-Marfim
    supabase secrets set WEBHOOK_SECRET=invente-uma-senha-longa-aleatoria-aqui
    ```
@@ -80,9 +81,8 @@ Até isso ser configurado, o checkout continua funcionando como **demonstração
    supabase functions deploy criar-pagamento
    supabase functions deploy pagamento-webhook
    ```
-5. No painel da InfinitePay, se eles pedirem pra cadastrar a URL do webhook manualmente (em vez de aceitar a que mandamos na criação do pagamento), use: `https://SEU-PROJETO.supabase.co/functions/v1/pagamento-webhook?token=O-MESMO-WEBHOOK_SECRET-DE-CIMA`.
 
-**Atenção:** os nomes exatos dos campos que a API da InfinitePay espera (`order_nsu`, `handle`, formato do valor em centavos etc.) em `supabase/functions/criar-pagamento/index.ts` e `supabase/functions/pagamento-webhook/index.ts` são a melhor tentativa com base na documentação pública deles — ainda não testamos contra uma chave real. No primeiro teste, se der erro, olhe os logs em **Supabase > Edge Functions > (nome da função) > Logs** e me manda o que aparecer lá (ou a resposta de erro) que a gente ajusta junto.
+**O que ainda não está 100% confirmado:** o formato da resposta de `POST /links` (qual campo traz o link de pagamento) não apareceu na documentação — a função tenta `url`, `checkout_url`, `link` e `payment_url`, nessa ordem. Se nenhum bater, o erro aparece nos logs (**Supabase > Edge Functions > criar-pagamento > Logs**) com a resposta real da InfinitePay, e a gente ajusta o nome do campo em 1 linha.
 
 ## Como ativar o cálculo de frete (Correios + Jadlog via SuperFrete)
 
@@ -116,7 +116,7 @@ Os preços de decant/frasco fechado estão em `data/products.js` (campos `fullPr
 - **O total do pedido é recalculado no banco, não confia no navegador.** O checkout mostra o total calculado no cliente só pra experiência de compra, mas quem decide o valor que fica gravado é um gatilho no Postgres (`supabase/product_prices.sql`) que busca o preço real de cada item numa tabela própria (`product_prices`) e recalcula o subtotal — inclusive o desconto de 5% do Pix e o frete grátis da entrega local em Londrina. Isso existe porque, sem ele, alguém com o DevTools aberto poderia editar o preço no `localStorage` do carrinho antes de fechar o pedido.
 - **A Edge Function de frete só aceita chamadas do domínio do site** (`https://gmlf.github.io`, mais `localhost:8080` pra testar local) — antes aceitava de qualquer origem, o que deixaria outra pessoa usar sua cota do SuperFrete escondida atrás do seu token. Se um dia colocar domínio próprio, adicione ele na lista `ORIGENS_PERMITIDAS` em `supabase/functions/calcular-frete/index.ts`.
 - **A tabela de eventos de analytics (`analytics_events`) precisa aceitar registro de visitantes sem login**, então não dá pra travar totalmente quem pode escrever nela — mas `supabase/analytics_hardening.sql` limita isso a tipos de evento conhecidos e a um tamanho máximo de payload, pra impedir que alguém despeje lixo direto pela API do Supabase.
-- Segredos (chave `service_role`, senha do banco, Client Secret do Google, token do SuperFrete, chave da InfinitePay, segredo do webhook) nunca ficam no código — só como variável de ambiente local (`.env`, no `.gitignore`) ou secret do Supabase.
+- Segredos (chave `service_role`, senha do banco, Client Secret do Google, token do SuperFrete, segredo do webhook da InfinitePay) nunca ficam no código — só como variável de ambiente local (`.env`, no `.gitignore`) ou secret do Supabase.
 - **Nenhum dado de cartão passa pelo nosso site** — o pagamento acontece inteiro na página hospedada da InfinitePay (ver seção acima). O `pagamento-webhook` só aceita chamadas com o segredo certo no `?token=`, pra ninguém conseguir marcar um pedido como pago sem ter pago de verdade, e usa a `service_role` só pra essa escrita pontual (o resto do site nunca usa essa chave).
 
 Rode `supabase/product_prices.sql` e `supabase/analytics_hardening.sql` no SQL Editor do Supabase pra ativar essas duas proteções.
