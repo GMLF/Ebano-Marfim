@@ -61,12 +61,19 @@
 
   // ---- passo a passo: 1 perfumes, 2 entrega, 3 pagamento ----
   let currentStep = 1;
+  let maxStepReached = 1; // até onde o cliente já validou — só deixa clicar na esteira pra voltar, não pra pular pra frente
   function showStep(n) {
     document.querySelectorAll('[data-step]').forEach(el => { el.hidden = Number(el.dataset.step) !== n; });
+    if (n > maxStepReached) maxStepReached = n;
     document.querySelectorAll('[data-step-pill]').forEach(el => {
       const pillStep = Number(el.dataset.stepPill);
       el.classList.toggle('active', pillStep === n);
       el.classList.toggle('done', pillStep < n);
+      el.classList.toggle('reachable', pillStep <= maxStepReached);
+      el.querySelector('.step-dot').textContent = pillStep < n ? '✓' : String(pillStep);
+    });
+    document.querySelectorAll('[data-step-line]').forEach(el => {
+      el.classList.toggle('done', Number(el.dataset.stepLine) < n);
     });
     currentStep = n;
     document.getElementById('checkoutSteps').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -88,6 +95,13 @@
   });
   document.querySelectorAll('[data-prev-step]').forEach(btn => {
     btn.addEventListener('click', () => showStep(currentStep - 1));
+  });
+  // clicar num passo já visitado na esteira volta direto pra ele, pra confirmar algo sem usar "Voltar" várias vezes
+  document.querySelectorAll('[data-step-pill]').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const n = Number(pill.dataset.stepPill);
+      if (n <= maxStepReached && n !== currentStep) showStep(n);
+    });
   });
   showStep(1);
 
