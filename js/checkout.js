@@ -182,9 +182,10 @@
 
     freteOpcoesEl.innerHTML = opcoes.map((op, i) => `
       <label class="frete-option">
-        <span>
-          <input type="radio" name="freteOpcao" value="${i}" ${i === 0 ? 'checked' : ''}>
-          <b>${op.transportadora}</b> · ${op.servico} — ${op.dias} dia(s)
+        <input type="radio" name="freteOpcao" value="${i}" ${i === 0 ? 'checked' : ''}>
+        <span class="frete-option-info">
+          <b>${op.servico}</b>
+          <span class="frete-option-meta">${op.transportadora} · até ${op.dias} dia(s) úteis</span>
         </span>
         <span class="frete-price${op.preco === 0 ? ' is-gratis' : ''}">${op.preco > 0 ? fmt(op.preco) : 'Grátis'}</span>
       </label>

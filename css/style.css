@@ -1328,18 +1328,25 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .pay-panel{ display:none; }
 .pay-panel.active{ display:block; }
 
-.frete-option{
-  display:flex; justify-content:space-between; align-items:center; gap:14px;
-  width:100%; padding:14px 16px; margin-bottom:10px; cursor:pointer; font-size:.86rem;
+/* .checkout-card label{...} deixa rótulo de campo pequeno/maiúsculo/apagado —
+   precisa de seletor mais específico aqui pra não herdar isso, já que
+   .frete-option também é uma <label> (do radio) dentro de um .checkout-card. */
+.checkout-card .frete-option{
+  display:flex; align-items:center; gap:14px;
+  width:100%; padding:14px 16px; margin-bottom:10px; cursor:pointer;
   border:1px solid var(--line-strong); border-radius:6px; background:var(--bg);
   transition:border-color .2s, background .2s;
+  text-transform:none; letter-spacing:normal; font-size:.86rem; color:var(--text);
 }
 .frete-option:hover{ border-color:var(--accent); }
 .frete-option:has(input:checked){ border-color:var(--accent); background:var(--accent-soft); }
-.frete-option input{ margin-right:10px; accent-color:var(--accent); }
+.frete-option input{ flex-shrink:0; accent-color:var(--accent); width:16px; height:16px; }
+.frete-option-info{ flex:1; display:flex; flex-direction:column; gap:3px; min-width:0; }
+.frete-option-info b{ font-size:.95rem; color:var(--text); }
+.frete-option-meta{ font-size:.78rem; color:var(--text-dim); }
 .frete-price{
   font-weight:600; font-size:.82rem; padding:5px 12px; border-radius:999px;
-  background:var(--line-strong); color:var(--text); white-space:nowrap;
+  background:var(--line-strong); color:var(--text); white-space:nowrap; flex-shrink:0;
 }
 .frete-option:has(input:checked) .frete-price{ background:var(--accent); color:var(--bg); }
 .frete-price.is-gratis{ background:var(--accent-soft); color:var(--accent); }
