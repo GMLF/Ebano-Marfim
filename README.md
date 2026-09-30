@@ -109,6 +109,100 @@ Os preços de decant/frasco fechado estão em `data/products.js` (campos `fullPr
 
 **Importante:** o servidor também guarda uma cópia desses preços em `supabase/product_prices.sql`, usada pra recalcular o total de cada pedido de verdade (ver seção de Segurança abaixo). Sempre que mudar um preço aqui, atualize o valor correspondente nesse arquivo e rode ele de novo no SQL Editor do Supabase — senão o pedido é salvo com o preço antigo.
 
+## Como funciona a precificação automática (comprasparaguai.com.br)
+
+Em vez de editar preço à mão em `data/products.js`/`supabase/product_prices.sql`
+toda vez que o custo em dólar muda, uma Edge Function busca o preço médio de
+cada perfume no [comprasparaguai.com.br](https://www.comprasparaguai.com.br/)
+e recalcula o preço sozinha, de hora em hora.
+
+**Fórmula** (constantes nomeadas em `supabase/functions/atualizar-precos/index.ts`,
+fácil de ajustar se entrar "perda" ou "margem de mão de obra" depois):
+
+```
+custo_base     = preço_médio_usd_no_site × cotação_do_dólar_do_site
+custo_com_taxa = custo_base × 1.20                    (imposto/custo de importação)
+
+preço_fechado        = (custo_com_taxa × 1.5 + 12) × 1.03
+preço_por_ml         = (custo_com_taxa × 2) / tamanho_do_frasco_ml
+preço_decante(X ml)  = (preço_por_ml × X + 12) × 1.03
+```
+
+`12` é a embalagem fixa (reais) e `1.03` a margem monetária de 3%, combinadas
+com o Caio — entram tanto no frasco fechado quanto no decante.
+
+**Por que precisa de URL mapeada por produto, não busca por nome:** o
+comprasparaguai lista várias concentrações e tamanhos pro mesmo perfume (ex.:
+"Dior Sauvage" tem EDT/EDP/Parfum/Elixir em 60/100/200ml). Casar por nome
+correria o risco de precificar com o produto errado. Por isso
+`product_sources` guarda a URL exata da página certa (mesma concentração e
+tamanho que a gente vende) por produto — hoje cobre Dior, Lattafa e 3 linhas
+Mykonos (California Signature, Milk Drops, Café Drops). Bidaya Parfums (comprado
+direto do site oficial da marca) e os produtos sem uma fonte confiável mapeada
+(Pink Drops, MyEgo) continuam com preço manual, do jeito de sempre.
+
+**Estoque:** se a página do produto não tiver nenhuma oferta listada, o
+produto é marcado como esgotado (`in_stock = false`) e some do "adicionar ao
+carrinho" — mas continua aparecendo na Coleção com a etiqueta "Esgotado", em
+vez de desaparecer, pra quem já tinha visto o produto não achar que ele foi
+removido.
+
+**Pra ativar:**
+1. Rode `supabase/pricing_automation.sql` no SQL Editor do Supabase (cria
+   `product_sources`, adiciona `in_stock`/`updated_at` em `product_prices` e
+   agenda o cron — precisa da extensão **pg_net**, ative em Database > Extensions).
+2. Publique a function: `supabase functions deploy atualizar-precos`.
+3. Em **Edge Functions > atualizar-precos > Secrets**, adicione `PRECOS_CRON_SECRET`
+   (invente uma senha longa) — e cole o mesmo valor no `pricing_automation.sql`
+   antes de rodar, no lugar de `COLE-O-MESMO-SEGREDO-AQUI` (a URL do seu
+   projeto no lugar de `SEU-PROJETO`, e a anon/publishable key — a mesma de
+   `js/supabase-config.js` — no lugar de `COLE-A-ANON-KEY-AQUI`; o Supabase
+   exige um `Authorization` válido em toda Edge Function antes mesmo de
+   chegar no código dela).
+
+Até isso ser configurado, os preços continuam os valores manuais de sempre —
+nada quebra, a automação só passa a sobrescrever quando estiver ativa.
+
+## Catálogo completo importado do comprasparaguai.com.br (com fotos)
+
+Além dos produtos que a loja já vende, um segundo crawler
+(`supabase/functions/catalog-crawler`) importa o catálogo inteiro de
+perfumes do comprasparaguai.com.br — nome, marca, foto, notas olfativas e
+preço (mesma fórmula da seção acima) — e mostra esgotado o que não tiver
+oferta lá. Esses produtos aparecem na Coleção (com "Carregar mais", já que
+são muitos) e entram no Quiz.
+
+**Por que não é instantâneo:** são ~26.807 produtos em ~500 páginas de
+listagem, e o robots.txt deles pede 10s entre requisições — não cabe numa
+function só. O crawler roda a cada 5 minutos (bem mais frequente que o de
+preço) e processa um pedaço por vez: 1 página de listagem nova + ~15
+produtos pra completar com detalhe, sempre os mais antigos primeiro. Uma
+volta completa no catálogo leva alguns dias; depois disso, o mesmo ritmo
+mantém preço/estoque atualizados.
+
+**Fotos são hotlink** (URL direta do comprasparaguai, não baixadas nem
+re-hospedadas) — dependem do site deles continuar no ar com essa URL.
+
+**Limitação conhecida:** a família olfativa de cada produto (usada no
+filtro "notas" da Coleção) é mapeada por palavra-chave a partir do texto
+cru do comprasparaguai pros 5 baldes que a Coleção já usa — é aproximado,
+não é curadoria manual. O mesmo vale pro "matchNotes" do Quiz: em vez de
+tags escolhidas à mão (como nos produtos curados), são geradas
+automaticamente a partir das notas de topo/coração/fundo raspadas.
+
+**Pra ativar:**
+1. Rode `supabase/catalog_import.sql` no SQL Editor (cria `catalog_products`
+   e `catalog_crawl_state`, agenda o cron de 5 em 5 minutos — reaproveita
+   pg_cron/pg_net já habilitados no passo anterior).
+2. Publique a function: `supabase functions deploy catalog-crawler`.
+3. Em **Edge Functions > catalog-crawler > Secrets**, adicione
+   `CATALOG_CRON_SECRET` — e cole o mesmo valor, a URL do projeto e a
+   anon/publishable key no `catalog_import.sql` antes de rodar (mesmos
+   placeholders de `pricing_automation.sql`).
+
+Até isso ser configurado, a Coleção mostra só os produtos curados de
+sempre — nada quebra.
+
 ## Segurança
 
 - **O total do pedido é recalculado no banco, não confia no navegador.** O checkout mostra o total calculado no cliente só pra experiência de compra, mas quem decide o valor que fica gravado é um gatilho no Postgres (`supabase/product_prices.sql`) que busca o preço real de cada item numa tabela própria (`product_prices`) e recalcula o subtotal — inclusive o desconto de 5% do Pix e o frete grátis da entrega local em Londrina. Isso existe porque, sem ele, alguém com o DevTools aberto poderia editar o preço no `localStorage` do carrinho antes de fechar o pedido.

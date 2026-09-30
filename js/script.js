@@ -13,6 +13,7 @@
      index.html (destaques) e no carrinho (qualquer página)
      ========================================================= */
   const PRODUCTS = window.PRODUCTS || [];
+  let refreshCollectionGrid = null; // setado dentro do bloco da página coleção; chamado de novo quando os preços dinâmicos chegam
 
   const fmt = n => 'R$ ' + n.toLocaleString('pt-BR');
   function priceOf(p, size) {
@@ -21,7 +22,35 @@
   function sizeLabel(size) {
     return size === 'full' ? 'Frasco fechado' : `Decant ${size}ml`;
   }
-  function findProduct(id) { return PRODUCTS.find(x => x.id === id); }
+  const catalogCache = new Map(); // id -> produto do catálogo importado, normalizado igual PRODUCTS
+  function findProduct(id) { return PRODUCTS.find(x => x.id === id) || catalogCache.get(id); }
+
+  function normalizeCatalogRow(row, priceRows) {
+    const precosPorTamanho = {};
+    let inStock = true;
+    (priceRows || []).filter(pr => pr.product_id === row.id).forEach(pr => {
+      precosPorTamanho[pr.size] = Number(pr.price) || 0;
+      if (pr.in_stock === false) inStock = false;
+    });
+    return {
+      id: row.id,
+      brand: row.brand || 'Diversos',
+      brandFilter: row.brand_filter || '',
+      familyFilter: row.family_filter || '',
+      name: row.name,
+      family: [row.gender, row.brand].filter(Boolean).join(' · '),
+      img: row.image_url || 'assets/favicon.svg',
+      top: row.top_notes || '',
+      heart: row.heart_notes || '',
+      base: row.base_notes || '',
+      fullSize: row.bottle_ml || 100,
+      fullPrice: precosPorTamanho.full || 0,
+      decants: { 3: precosPorTamanho[3] || 0, 5: precosPorTamanho[5] || 0, 10: precosPorTamanho[10] || 0 },
+      matchNotes: row.match_notes || [],
+      inStock,
+      fromCatalog: true
+    };
+  }
 
   /* =========================================================
      tema / linha visual (persistido) — todas as páginas
@@ -293,8 +322,18 @@
      quick view modal — só existe em colecao.html
      ========================================================= */
   const modalBody = document.getElementById('modalBody');
-  function openQuickView(id) {
-    const p = findProduct(id);
+  async function openQuickView(id) {
+    let p = findProduct(id);
+    if (!p && window.emAuth && window.emAuth.isConfigured) {
+      // produto do catálogo importado que ainda não passou pela Coleção nesta
+      // sessão (ex.: veio direto de um link do Quiz) — busca avulsa por id
+      const row = await window.emAuth.getCatalogProduct(id);
+      if (row) {
+        const precos = await window.emAuth.getPricesFor([id]);
+        p = normalizeCatalogRow(row, precos);
+        catalogCache.set(p.id, p);
+      }
+    }
     if (!p || !modalBody || !modal || !overlay) return;
     if (window.emAuth) window.emAuth.logEvent('product_view', { product_id: p.id, name: p.name });
     let selectedSize = 10;
@@ -304,9 +343,9 @@
         <span class="p-eyebrow">${p.brand} · ${p.family}</span>
         <h3>${p.name}</h3>
         <div class="pyramid">
-          <div class="pyramid-row"><b>Topo</b><span>${p.top}</span></div>
-          <div class="pyramid-row"><b>Coração</b><span>${p.heart}</span></div>
-          <div class="pyramid-row"><b>Fundo</b><span>${p.base}</span></div>
+          <div class="pyramid-row"><b>Topo</b><span>${p.top || '—'}</span></div>
+          <div class="pyramid-row"><b>Coração</b><span>${p.heart || '—'}</span></div>
+          <div class="pyramid-row"><b>Fundo</b><span>${p.base || '—'}</span></div>
         </div>
         <div class="size-row" id="sizeRow">
           <button data-size="3">Decant<small>3ml · ${fmt(p.decants[3])}</small></button>
@@ -316,7 +355,7 @@
         </div>
         <div class="modal-foot">
           <span class="product-price" id="modalPrice">${fmt(p.decants[10])}</span>
-          <button class="btn btn-solid" id="modalAddBtn">Adicionar à seleção</button>
+          <button class="btn btn-solid" id="modalAddBtn" ${p.inStock === false ? 'disabled' : ''}>${p.inStock === false ? 'Esgotado' : 'Adicionar à seleção'}</button>
         </div>
       </div>
     `;
@@ -343,18 +382,14 @@
      ========================================================= */
   const productGrid = document.getElementById('productGrid');
   if (productGrid) {
-    function renderGrid(list) {
-      if (!list.length) {
-        productGrid.innerHTML = '<p class="catalog-empty">Nenhum perfume encontrado com esses filtros.</p>';
-        return;
-      }
-      productGrid.innerHTML = list.map(p => {
-        const sizes = [3, 5, 10, 'full'];
-        return `
+    const sizes = [3, 5, 10, 'full'];
+    function cardHtml(p) {
+      return `
         <article class="product-card reveal in" data-id="${p.id}" data-brand="${p.brandFilter}" data-family="${p.familyFilter}" data-name="${p.name.toLowerCase()}" data-selected-size="10">
           <div class="product-visual${p.artBg ? ' full-art' : ''}">
             <span class="brand-tag">${p.brand}</span>
-            <img class="product-photo" src="${p.img}" alt="${p.name}, ${p.brand}">
+            ${p.inStock === false ? '<span class="status-badge status-cancelado stock-badge">Esgotado</span>' : ''}
+            <img class="product-photo" src="${p.img}" alt="${p.name}, ${p.brand}" loading="lazy">
             ${p.artBg ? '' : '<span class="shine" aria-hidden="true"></span>'}
             <button class="quick-view-btn" data-quickview="${p.id}" aria-label="Ver detalhes de ${p.name}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -364,28 +399,36 @@
             <span class="p-eyebrow">${p.family}</span>
             <h3>${p.name}</h3>
             <div class="product-notes">
-              <span class="note-pill">${p.top.split(',')[0]}</span>
-              <span class="note-pill">${p.heart.split(',')[0]}</span>
-              <span class="note-pill">${p.base.split(',')[0]}</span>
+              <span class="note-pill">${(p.top || '—').split(',')[0]}</span>
+              <span class="note-pill">${(p.heart || '—').split(',')[0]}</span>
+              <span class="note-pill">${(p.base || '—').split(',')[0]}</span>
             </div>
             <div class="qty-pills" data-sizepills="${p.id}">
               ${sizes.map(s => `<button data-size="${s}" class="${s === 10 ? 'active' : ''}">${s === 'full' ? `Frasco ${p.fullSize}ml` : s + 'ml'}</button>`).join('')}
             </div>
             <div class="product-foot">
               <span class="product-price" data-priceof="${p.id}">${fmt(priceOf(p, 10))}</span>
-              <button class="add-cart-btn" data-quickadd="${p.id}" aria-label="Adicionar ${p.name} ao carrinho">
+              <button class="add-cart-btn" data-quickadd="${p.id}" aria-label="Adicionar ${p.name} ao carrinho" ${p.inStock === false ? 'disabled' : ''}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h2l2.4 12.6a2 2 0 0 0 2 1.6h7.4a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>
               </button>
             </div>
           </div>
         </article>
       `;
-      }).join('');
+    }
+    function renderGrid(list) {
+      productGrid.innerHTML = list.length ? list.map(cardHtml).join('') : '<p class="catalog-empty">Nenhum perfume encontrado com esses filtros.</p>';
+    }
+    function appendCards(list) {
+      if (!list.length) return;
+      productGrid.querySelector('.catalog-empty')?.remove();
+      productGrid.insertAdjacentHTML('beforeend', list.map(cardHtml).join(''));
     }
 
     const searchInput = document.getElementById('searchInput');
     const selectBrand = document.getElementById('selectBrand');
     const selectFamily = document.getElementById('selectFamily');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
 
     function currentFiltered() {
       const term = (searchInput && searchInput.value || '').trim().toLowerCase();
@@ -398,9 +441,46 @@
       );
     }
 
-    function refresh() {
-      renderGrid(currentFiltered());
+    // além dos produtos curados (acima, em memória), a Coleção também traz
+    // o catálogo importado do comprasparaguai (js/auth.js:getCatalogPage),
+    // paginado — "Carregar mais" busca a próxima página no banco.
+    let catalogOffset = 0;
+    let catalogHasMore = true;
+    let catalogLoadingSeq = 0;
+
+    async function loadMoreCatalog() {
+      if (!window.emAuth || !window.emAuth.isConfigured || !catalogHasMore || !loadMoreBtn) return;
+      const meuToken = catalogLoadingSeq;
+      loadMoreBtn.disabled = true;
+      const termo = (searchInput && searchInput.value || '').trim();
+      const marca = selectBrand ? selectBrand.value : 'todos';
+      const familia = selectFamily ? selectFamily.value : 'todos';
+      const limite = 30;
+      const linhas = await window.emAuth.getCatalogPage({ termo, marca, familia, offset: catalogOffset, limite });
+      if (meuToken !== catalogLoadingSeq) return; // filtro mudou enquanto buscava — descarta resultado velho
+      catalogHasMore = linhas.length === limite;
+      catalogOffset += linhas.length;
+      if (linhas.length) {
+        const precos = await window.emAuth.getPricesFor(linhas.map(r => r.id));
+        if (meuToken !== catalogLoadingSeq) return;
+        const produtos = linhas.map(r => normalizeCatalogRow(r, precos));
+        produtos.forEach(p => catalogCache.set(p.id, p));
+        appendCards(produtos);
+      }
+      loadMoreBtn.hidden = !catalogHasMore;
+      loadMoreBtn.disabled = false;
     }
+    if (loadMoreBtn) loadMoreBtn.addEventListener('click', loadMoreCatalog);
+
+    function refresh() {
+      catalogLoadingSeq++;
+      catalogOffset = 0;
+      catalogHasMore = true;
+      if (loadMoreBtn) loadMoreBtn.hidden = true;
+      renderGrid(currentFiltered());
+      loadMoreCatalog();
+    }
+    refreshCollectionGrid = refresh;
 
     let searchLogTimer;
     if (searchInput) searchInput.addEventListener('input', () => {
@@ -411,6 +491,20 @@
     });
     if (selectBrand) selectBrand.addEventListener('change', refresh);
     if (selectFamily) selectFamily.addEventListener('change', refresh);
+
+    // marcas extras (catálogo importado) além das 4 curadas fixas no HTML
+    if (window.emAuth && window.emAuth.isConfigured && selectBrand) {
+      window.emAuth.getCatalogBrands().then(marcas => {
+        const existentes = new Set([...selectBrand.options].map(o => o.value));
+        marcas.forEach(m => {
+          if (existentes.has(m.value)) return;
+          const opt = document.createElement('option');
+          opt.value = m.value;
+          opt.textContent = m.label;
+          selectBrand.appendChild(opt);
+        });
+      });
+    }
 
     // filtros vindos de outra página via querystring (?marca=...&nota=...&buscar=...)
     const qs = new URLSearchParams(location.search);
@@ -589,18 +683,31 @@
       });
     }
 
-    function computeMatches() {
-      return PRODUCTS.map(p => {
-        const matchedNotes = p.matchNotes.filter(n => noteScore[n]);
-        const rawScore = matchedNotes.reduce((s, n) => s + noteScore[n], 0);
-        const affinity = rawScore / p.matchNotes.length;
-        return { p, affinity, matchedNotes };
-      }).sort((a, b) => b.affinity - a.affinity);
+    async function computeMatches() {
+      let produtosCatalogo = [];
+      if (window.emAuth && window.emAuth.isConfigured) {
+        const notasComPontuacao = Object.keys(noteScore).filter(n => noteScore[n] > 0);
+        const linhas = await window.emAuth.getCatalogMatches(notasComPontuacao);
+        produtosCatalogo = linhas.map(row => {
+          const p = catalogCache.get(row.id) || normalizeCatalogRow(row, []);
+          catalogCache.set(p.id, p);
+          return p;
+        });
+      }
+      return [...PRODUCTS, ...produtosCatalogo]
+        .filter(p => p.matchNotes && p.matchNotes.length)
+        .map(p => {
+          const matchedNotes = p.matchNotes.filter(n => noteScore[n]);
+          const rawScore = matchedNotes.reduce((s, n) => s + noteScore[n], 0);
+          const affinity = rawScore / p.matchNotes.length;
+          return { p, affinity, matchedNotes };
+        }).sort((a, b) => b.affinity - a.affinity);
     }
 
-    function renderQuizResult() {
+    async function renderQuizResult() {
       setProgress(QUIZ.length);
-      const ranked = computeMatches();
+      quizBox.innerHTML = '<p class="catalog-empty">Calculando sua combinação…</p>';
+      const ranked = await computeMatches();
       const top = ranked[0];
       const maxAffinity = top.affinity || 1;
 
@@ -682,6 +789,29 @@
       newsletterMsg.classList.remove('err');
       newsletterMsg.textContent = `Inscrição confirmada para ${input.value.trim()}. Até a próxima novidade.`;
       input.value = '';
+    });
+  }
+
+  /* =========================================================
+     preços dinâmicos (Supabase) — todas as páginas com catálogo
+     data/products.js continua sendo o valor inicial (site funciona mesmo
+     sem Supabase configurado); quando product_prices responde, sobrepõe
+     fullPrice/decants/inStock nos produtos já carregados e re-renderiza.
+     Busca só os preços dos produtos curados (por id) — a tabela inteira
+     cresce pra dezenas de milhares de linhas com o catálogo importado
+     (js/auth.js:getCatalogPage já busca preço filtrado pra esses).
+     ========================================================= */
+  if (window.emAuth && window.emAuth.isConfigured && PRODUCTS.length) {
+    window.emAuth.getPricesFor(PRODUCTS.map(p => p.id)).then(rows => {
+      if (!rows.length) return;
+      rows.forEach(row => {
+        const p = findProduct(row.product_id);
+        if (!p) return;
+        if (row.size === 'full') p.fullPrice = Number(row.price);
+        else p.decants[Number(row.size)] = Number(row.price);
+        p.inStock = row.in_stock !== false;
+      });
+      if (refreshCollectionGrid) refreshCollectionGrid();
     });
   }
 

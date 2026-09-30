@@ -104,6 +104,38 @@
     const { data, error } = await client.rpc('admin_top_customers', { since_days: sinceDays || null });
     return error ? [] : data;
   }
+  async function getPricesFor(ids) {
+    if (!client || !ids.length) return [];
+    const { data, error } = await client.from('product_prices').select('*').in('product_id', ids);
+    return error ? [] : data;
+  }
+  async function getCatalogPage({ termo, marca, familia, offset = 0, limite = 30 } = {}) {
+    if (!client) return [];
+    let query = client.from('catalog_products').select('*').eq('status', 'completo');
+    if (termo) query = query.ilike('name', `%${termo}%`);
+    if (marca && marca !== 'todos') query = query.eq('brand_filter', marca);
+    if (familia && familia !== 'todos') query = query.eq('family_filter', familia);
+    const { data, error } = await query.order('updated_at', { ascending: false }).range(offset, offset + limite - 1);
+    return error ? [] : data;
+  }
+  async function getCatalogBrands() {
+    if (!client) return [];
+    const { data, error } = await client.from('catalog_products').select('brand, brand_filter').eq('status', 'completo').not('brand_filter', 'is', null).limit(3000);
+    if (error || !data) return [];
+    const vistos = new Map();
+    data.forEach(row => { if (row.brand_filter && !vistos.has(row.brand_filter)) vistos.set(row.brand_filter, row.brand); });
+    return [...vistos.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
+  }
+  async function getCatalogProduct(id) {
+    if (!client) return null;
+    const { data, error } = await client.from('catalog_products').select('*').eq('id', id).eq('status', 'completo').maybeSingle();
+    return error ? null : data;
+  }
+  async function getCatalogMatches(notas, limite = 300) {
+    if (!client || !notas.length) return [];
+    const { data, error } = await client.from('catalog_products').select('*').eq('status', 'completo').overlaps('match_notes', notas).limit(limite);
+    return error ? [] : data;
+  }
   async function getAllOrders() {
     if (!client) return [];
     const { data, error } = await client.from('orders').select('*').order('created_at', { ascending: false });
@@ -170,7 +202,8 @@
   window.emAuth = {
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
-    saveOrder, getOrders, avaliarPedido, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete, criarPagamento
+    saveOrder, getOrders, avaliarPedido, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete, criarPagamento,
+    getCatalogPage, getCatalogBrands, getCatalogMatches, getPricesFor, getCatalogProduct
   };
 
   /* reflete o estado de login no ícone de conta do cabeçalho, em todas as páginas */

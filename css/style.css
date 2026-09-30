@@ -825,6 +825,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 .add-cart-btn:hover{ background:var(--accent); border-color:var(--accent); color:var(--ink-contrast); }
 .add-cart-btn svg{ width:15px; height:15px; }
+.add-cart-btn[disabled]{ opacity:.4; cursor:not-allowed; pointer-events:none; }
 
 /* =========================================================
    ateliê / processo
@@ -1270,6 +1271,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .status-badge.status-enviado{ background:rgba(79,140,224,.16); color:#4F7FE0; }
 .status-badge.status-entregue{ background:var(--success-soft); color:var(--success); }
 .status-badge.status-cancelado{ background:rgba(200,60,60,.14); color:#C33; }
+.stock-badge{ position:absolute; top:14px; right:14px; z-index:2; background:var(--surface); }
 .order-rating{ display:flex; align-items:center; gap:4px; font-size:.8rem; color:var(--text-faint); }
 .order-rating .star{ font-size:1.05rem; color:var(--line-strong); }
 .order-rating .star.filled{ color:var(--accent); }
