@@ -192,8 +192,9 @@ automaticamente a partir das notas de topo/coração/fundo raspadas.
 
 **Pra ativar:**
 1. Rode `supabase/catalog_import.sql` no SQL Editor (cria `catalog_products`
-   e `catalog_crawl_state`, agenda o cron de 5 em 5 minutos — reaproveita
-   pg_cron/pg_net já habilitados no passo anterior).
+   e `catalog_crawl_state`, agenda o cron de 2 em 2 minutos — lotes pequenos
+   de propósito, um lote maior já estourou o limite de recursos da Edge
+   Function; reaproveita pg_cron/pg_net já habilitados no passo anterior).
 2. Publique a function: `supabase functions deploy catalog-crawler`.
 3. Em **Edge Functions > catalog-crawler > Secrets**, adicione
    `CATALOG_CRON_SECRET` — e cole o mesmo valor, a URL do projeto e a
@@ -202,6 +203,30 @@ automaticamente a partir das notas de topo/coração/fundo raspadas.
 
 Até isso ser configurado, a Coleção mostra só os produtos curados de
 sempre — nada quebra.
+
+### Fundo removido das fotos importadas
+
+As fotos importadas vêm com o fundo original da loja (geralmente branco/liso,
+mas não sempre). Uma segunda function (`process-image-catalogo`) baixa cada
+foto, troca por transparente os pixels próximos da cor do fundo (amostrada
+nos 4 cantos da imagem, com uma transição suave na borda) e salva o PNG
+resultante no Storage — sem IA nem API paga. Funciona bem em foto de estúdio
+com fundo liso (a maioria dos perfumes); fundos mais complexos ficam com
+recorte imperfeito. Fotos em **WEBP/AVIF não são processadas** (a biblioteca
+de imagem usada não lê esses formatos) — nesses casos o produto continua
+mostrando a foto original, sem quebrar.
+
+**Pra ativar:**
+1. Rode `supabase/catalog_image_bg.sql` no SQL Editor (cria o bucket público
+   `catalog-fotos`, as colunas `image_bg_url`/`image_bg_status` em
+   `catalog_products`, e agenda o cron de 3 em 3 minutos).
+2. Publique a function: `supabase functions deploy process-image-catalogo`.
+3. Em **Edge Functions > process-image-catalogo > Secrets**, adicione
+   `IMAGE_CRON_SECRET` — e cole o mesmo valor no `catalog_image_bg.sql`
+   antes de rodar.
+
+Até isso ser configurado (ou pra fotos que falharem), o site mostra a foto
+original — a troca é automática assim que `image_bg_url` fica pronto.
 
 ## Segurança
 

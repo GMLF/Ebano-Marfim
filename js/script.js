@@ -39,7 +39,7 @@
       familyFilter: row.family_filter || '',
       name: row.name,
       family: [row.gender, row.brand].filter(Boolean).join(' · '),
-      img: row.image_url || 'assets/favicon.svg',
+      img: row.image_bg_url || row.image_url || 'assets/favicon.svg',
       top: row.top_notes || '',
       heart: row.heart_notes || '',
       base: row.base_notes || '',
@@ -199,6 +199,21 @@
         </div>
       </a>
     `).join('');
+  }
+
+  /* =========================================================
+     "casas parceiras" no hero (index.html) — conta marcas curadas +
+     marcas já importadas pelo catálogo, pra não ficar fixo em 4 pra sempre
+     ========================================================= */
+  const casasParceirasStat = document.getElementById('casasParceirasStat');
+  if (casasParceirasStat) {
+    const marcasCuradas = new Set(PRODUCTS.map(p => p.brandFilter));
+    if (window.emAuth && window.emAuth.isConfigured) {
+      window.emAuth.getCatalogBrands().then(marcas => {
+        marcas.forEach(m => marcasCuradas.add(m.value));
+        casasParceirasStat.textContent = marcasCuradas.size;
+      });
+    }
   }
 
   /* =========================================================
