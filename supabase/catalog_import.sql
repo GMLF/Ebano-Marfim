@@ -77,7 +77,7 @@ select cron.schedule(
   select net.http_post(
     url := 'https://lkvejlfwgjfdxakhxfpr.supabase.co/functions/v1/catalog-crawler',
     headers := jsonb_build_object(
-      'x-cron-secret', '0b836deb0382536c25c69ca0787a8d33fe5f036b08508856',
+      'x-cron-secret', 'COLE-O-MESMO-SEGREDO-AQUI',
       'Authorization', 'Bearer sb_publishable_Cd7doW8laotUTzR1WZQ5BQ_AqHJF_ok'
     ),
     body := '{}'::jsonb

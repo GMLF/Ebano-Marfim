@@ -43,7 +43,7 @@ select cron.schedule(
   select net.http_post(
     url := 'https://lkvejlfwgjfdxakhxfpr.supabase.co/functions/v1/process-image-catalogo',
     headers := jsonb_build_object(
-      'x-cron-secret', 'e3e1884fc4d4b9450498e715f2592c0865db595260b6bd31',
+      'x-cron-secret', 'IMG-COLE-UM-SEGREDO-AQUI',
       'Authorization', 'Bearer sb_publishable_Cd7doW8laotUTzR1WZQ5BQ_AqHJF_ok'
     ),
     body := '{}'::jsonb

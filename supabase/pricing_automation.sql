@@ -75,7 +75,7 @@ select cron.schedule(
   select net.http_post(
     url := 'https://lkvejlfwgjfdxakhxfpr.supabase.co/functions/v1/atualizar-precos',
     headers := jsonb_build_object(
-      'x-cron-secret', '90448ffa04d88e9a07b8adbe7913bb84c6d7d709be029137',
+      'x-cron-secret', 'COLE-O-MESMO-SEGREDO-AQUI',
       'Authorization', 'Bearer sb_publishable_Cd7doW8laotUTzR1WZQ5BQ_AqHJF_ok'
     ),
     body := '{}'::jsonb
