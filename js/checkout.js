@@ -44,7 +44,7 @@
 
   if (!cart.length) {
     document.getElementById('checkoutContent').innerHTML =
-      '<p class="drawer-empty" style="padding:60px 0;">Sua seleção está vazia. <a href="colecao.html">Ver a coleção</a>.</p>';
+      '<p class="drawer-empty" style="padding:60px 0;">Sua seleção está vazia. <a href="colecao">Ver a coleção</a>.</p>';
     return;
   }
 

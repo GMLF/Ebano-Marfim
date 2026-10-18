@@ -26,14 +26,14 @@
     if (!client) return { error: NOT_CONFIGURED_MSG };
     const { error } = await client.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + window.location.pathname.replace(/[^/]+$/, '') + 'conta.html' }
+      options: { redirectTo: window.location.origin + window.location.pathname.replace(/[^/]+$/, '') + 'conta' }
     });
     return { error: error ? error.message : null };
   }
   async function resetPassword(email) {
     if (!client) return { error: NOT_CONFIGURED_MSG };
     const { error } = await client.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + window.location.pathname.replace(/[^/]+$/, '') + 'conta.html'
+      redirectTo: window.location.origin + window.location.pathname.replace(/[^/]+$/, '') + 'conta'
     });
     return { error: error ? error.message : null };
   }

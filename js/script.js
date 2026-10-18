@@ -133,7 +133,7 @@
       e.preventDefault();
       const term = headerSearchInput.value.trim();
       if (term && window.emAuth) window.emAuth.logEvent('search', { term });
-      window.location.href = 'colecao.html' + (term ? '?buscar=' + encodeURIComponent(term) : '');
+      window.location.href = 'colecao' + (term ? '?buscar=' + encodeURIComponent(term) : '');
     });
   }
 
@@ -182,7 +182,7 @@
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     destaquesGrid.innerHTML = shuffled.slice(0, 3).map(p => `
-      <a class="product-card" href="colecao.html#p-${p.id}" style="text-decoration:none;">
+      <a class="product-card" href="colecao#p-${p.id}" style="text-decoration:none;">
         <div class="product-visual${p.artBg ? ' full-art' : ''}">
           <span class="brand-tag">${p.brand}</span>
           <img class="product-photo" src="${p.img}" alt="${p.name}, ${p.brand}">
@@ -324,7 +324,7 @@
   if (checkoutBtn) {
     checkoutBtn.addEventListener('click', () => {
       if (!loadCart().length) { showToast('Sua seleção está vazia'); return; }
-      window.location.href = 'checkout.html';
+      window.location.href = 'checkout';
     });
   }
 
@@ -757,7 +757,7 @@
             `).join('')}
           </div>
           <div class="quiz-result-ctas">
-            <a class="btn btn-solid" href="colecao.html#p-${top.p.id}">Ver ${top.p.name} na coleção</a>
+            <a class="btn btn-solid" href="colecao#p-${top.p.id}">Ver ${top.p.name} na coleção</a>
             <button class="btn btn-ghost" id="quizRestart">Refazer o teste</button>
           </div>
         </div>
