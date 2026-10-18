@@ -475,10 +475,13 @@
       if (meuToken !== catalogLoadingSeq) return; // filtro mudou enquanto buscava — descarta resultado velho
       catalogHasMore = linhas.length === limite;
       catalogOffset += linhas.length;
-      if (linhas.length) {
-        const precos = await window.emAuth.getPricesFor(linhas.map(r => r.id));
+      // descarta linhas sem foto própria: sem image_bg_url/image_url o card
+      // cairia no favicon do site como "foto do perfume", o que parece quebrado.
+      const linhasComFoto = linhas.filter(r => r.image_bg_url || r.image_url);
+      if (linhasComFoto.length) {
+        const precos = await window.emAuth.getPricesFor(linhasComFoto.map(r => r.id));
         if (meuToken !== catalogLoadingSeq) return;
-        const produtos = linhas.map(r => normalizeCatalogRow(r, precos));
+        const produtos = linhasComFoto.map(r => normalizeCatalogRow(r, precos));
         produtos.forEach(p => catalogCache.set(p.id, p));
         appendCards(produtos);
       }
@@ -491,9 +494,11 @@
       catalogLoadingSeq++;
       catalogOffset = 0;
       catalogHasMore = true;
-      if (loadMoreBtn) loadMoreBtn.hidden = true;
       renderGrid(currentFiltered());
-      loadMoreCatalog();
+      // o catálogo importado (fotos de procedência variada) só entra quando a
+      // pessoa pede explicitamente em "Carregar mais" — evita que a grade
+      // premium curada já abra misturada com fotos de qualidade inconsistente.
+      if (loadMoreBtn) loadMoreBtn.hidden = !(window.emAuth && window.emAuth.isConfigured);
     }
     refreshCollectionGrid = refresh;
 

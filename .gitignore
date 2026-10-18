@@ -16,3 +16,12 @@ node_modules/
 # imagens brutas/temporárias usadas só durante o processamento das fotos
 *.raw.*
 assets/products/*-raw.*
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+
+# overrides locais do Claude Code (permissões etc.) — não deve ir pro repo
+.claude/settings.local.json

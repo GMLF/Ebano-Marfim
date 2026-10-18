@@ -174,5 +174,16 @@ window.PRODUCTS = [
       fullSize: 50, fullPrice: 259,
       decants: { 3: 34, 5: 49, 10: 84 },
       matchNotes: ['pimenta-rosa', 'bergamota', 'ambar', 'vanilla', 'musk']
+    },
+    {
+      id: 'bidaya-blind-ecstasy', brand: 'Bidaya Parfums', brandFilter: 'bidaya', familyFilter: 'gourmand',
+      name: 'Blind Ecstasy', family: 'Cítrico Oriental Amadeirado · Unissex',
+      img: 'assets/products/bidaya-blind-ecstasy.png', artBg: true,
+      top: 'Bergamota, cognac, grapefruit, zimbro, frutas vermelhas',
+      heart: 'Sálvia-esclareia, cipreste, gengibre, pimenta',
+      base: 'Âmbar, cardamomo, musk, sândalo, baunilha, vetiver, cedro-da-virgínia',
+      fullSize: 100, fullPrice: 319,
+      decants: { 3: 30, 5: 55, 10: 80 },
+      matchNotes: ['ambar', 'vanilla', 'musk', 'sandalo', 'bergamota']
     }
 ];
