@@ -14,7 +14,7 @@
 //
 // Secrets necessários (Supabase > Edge Functions > criar-pagamento > Secrets):
 //   INFINITEPAY_HANDLE  -> seu handle, sem o "$" (ex.: guilherme-moreira-107)
-//   SITE_URL            -> https://gmlf.github.io/Ebano-Marfim (sem barra no final)
+//   SITE_URL            -> https://ebanomarfim.com.br (sem barra no final)
 //   WEBHOOK_SECRET      -> um segredo que você mesmo inventa (uma senha longa aleatória)
 // SUPABASE_URL e SUPABASE_ANON_KEY já existem automaticamente em toda Edge Function.
 
@@ -22,12 +22,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0';
 
 const ORIGENS_PERMITIDAS = new Set([
   'https://gmlf.github.io',
+  'https://ebanomarfim.com.br',
+  'https://www.ebanomarfim.com.br',
   'http://localhost:8080',
   'http://127.0.0.1:8080'
 ]);
 
 function corsHeadersPara(origin: string | null) {
-  const origemPermitida = origin && ORIGENS_PERMITIDAS.has(origin) ? origin : 'https://gmlf.github.io';
+  const origemPermitida = origin && ORIGENS_PERMITIDAS.has(origin) ? origin : 'https://ebanomarfim.com.br';
   return {
     'Access-Control-Allow-Origin': origemPermitida,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',

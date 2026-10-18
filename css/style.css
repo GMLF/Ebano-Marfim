@@ -560,59 +560,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 @keyframes scrollmarquee{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
 
 /* =========================================================
-   manifesto / storytelling
-   ========================================================= */
-.manifesto{
-  display:grid;
-  grid-template-columns:.85fr 1.15fr;
-  gap:clamp(32px,6vw,80px);
-  align-items:center;
-}
-.manifesto-visual{
-  position:relative;
-  aspect-ratio:4/5;
-  border-radius:6px;
-  background:linear-gradient(155deg, var(--ink-contrast) 0%, transparent 52%), var(--surface-2);
-  border:1px solid var(--line);
-  overflow:hidden;
-}
-.manifesto-visual .grain{
-  position:absolute; inset:0;
-  background-image:radial-gradient(circle at 20% 20%, rgba(255,255,255,.08), transparent 45%);
-}
-.manifesto-visual .float-orb{
-  position:absolute;
-  width:150px; height:150px;
-  border-radius:50%;
-  background:conic-gradient(from 140deg, var(--ink-contrast) 0 50%, var(--surface) 50% 100%);
-  border:1px solid var(--line-strong);
-  bottom:12%; right:10%;
-  box-shadow:0 30px 50px -20px rgba(0,0,0,.5);
-}
-.manifesto-copy p{ margin-top:18px; max-width:46ch; }
-.manifesto-copy h2{ font-size:clamp(1.9rem,3.6vw,2.6rem); margin-top:14px; }
-.manifesto-list{
-  margin-top:28px;
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-}
-.manifesto-list li{
-  display:flex;
-  gap:14px;
-  align-items:baseline;
-  border-top:1px solid var(--line);
-  padding-top:14px;
-  color:var(--text-dim);
-  font-size:.92rem;
-}
-.manifesto-list b{ color:var(--text); font-family:var(--font-display); font-weight:600; min-width:2ch; }
-
-@media (max-width: 860px){
-  .manifesto{ grid-template-columns:1fr; }
-}
-
-/* =========================================================
    reveal on scroll
    ========================================================= */
 .reveal{ opacity:1; transform:none; transition:opacity .8s ease, transform .8s ease; }

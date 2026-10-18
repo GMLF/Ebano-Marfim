@@ -73,7 +73,7 @@ A API de "Checkout Integrado" da InfinitePay (painel deles: **Checkout → Docum
 3. Configure os secrets (nunca no código):
    ```bash
    supabase secrets set INFINITEPAY_HANDLE=guilherme-moreira-107
-   supabase secrets set SITE_URL=https://gmlf.github.io/Ebano-Marfim
+   supabase secrets set SITE_URL=https://ebanomarfim.com.br
    supabase secrets set WEBHOOK_SECRET=invente-uma-senha-longa-aleatoria-aqui
    ```
 4. Publique as duas funções:
@@ -231,7 +231,7 @@ original — a troca é automática assim que `image_bg_url` fica pronto.
 ## Segurança
 
 - **O total do pedido é recalculado no banco, não confia no navegador.** O checkout mostra o total calculado no cliente só pra experiência de compra, mas quem decide o valor que fica gravado é um gatilho no Postgres (`supabase/product_prices.sql`) que busca o preço real de cada item numa tabela própria (`product_prices`) e recalcula o subtotal — inclusive o desconto de 5% do Pix e o frete grátis da entrega local em Londrina. Isso existe porque, sem ele, alguém com o DevTools aberto poderia editar o preço no `localStorage` do carrinho antes de fechar o pedido.
-- **A Edge Function de frete só aceita chamadas do domínio do site** (`https://gmlf.github.io`, mais `localhost:8080` pra testar local) — antes aceitava de qualquer origem, o que deixaria outra pessoa usar sua cota do SuperFrete escondida atrás do seu token. Se um dia colocar domínio próprio, adicione ele na lista `ORIGENS_PERMITIDAS` em `supabase/functions/calcular-frete/index.ts`.
+- **A Edge Function de frete só aceita chamadas do domínio do site** (`https://ebanomarfim.com.br`, `https://gmlf.github.io`, mais `localhost:8080` pra testar local) — antes aceitava de qualquer origem, o que deixaria outra pessoa usar sua cota do SuperFrete escondida atrás do seu token. Se trocar de domínio de novo, atualize a lista `ORIGENS_PERMITIDAS` em `supabase/functions/calcular-frete/index.ts` e `supabase/functions/criar-pagamento/index.ts`.
 - **A tabela de eventos de analytics (`analytics_events`) precisa aceitar registro de visitantes sem login**, então não dá pra travar totalmente quem pode escrever nela — mas `supabase/analytics_hardening.sql` limita isso a tipos de evento conhecidos e a um tamanho máximo de payload, pra impedir que alguém despeje lixo direto pela API do Supabase.
 - Segredos (chave `service_role`, senha do banco, Client Secret do Google, token do SuperFrete, segredo do webhook da InfinitePay) nunca ficam no código — só como variável de ambiente local (`.env`, no `.gitignore`) ou secret do Supabase.
 - **Nenhum dado de cartão passa pelo nosso site** — o pagamento acontece inteiro na página hospedada da InfinitePay (ver seção acima). O `pagamento-webhook` só aceita chamadas com o segredo certo no `?token=`, pra ninguém conseguir marcar um pedido como pago sem ter pago de verdade, e usa a `service_role` só pra essa escrita pontual (o resto do site nunca usa essa chave).
