@@ -361,12 +361,45 @@
           <span class="product-price" id="modalPrice">${fmt(p.fullPrice)}</span>
           <button class="btn btn-solid" id="modalAddBtn" ${p.inStock === false ? 'disabled' : ''}>${p.inStock === false ? 'Esgotado' : 'Adicionar à seleção'}</button>
         </div>
+        <div id="modalReviews"></div>
       </div>
     `;
     modalBody.querySelector('#modalAddBtn').addEventListener('click', () => addToCart(p.id));
 
     overlay.classList.add('open');
     modal.classList.add('open');
+
+    if (window.emAuth && window.emAuth.isConfigured) {
+      const reviewsBox = modalBody.querySelector('#modalReviews');
+      window.emAuth.getProductReviews(p.id).then(reviews => {
+        if (!modal.classList.contains('open') || !reviewsBox.isConnected) return; // produto trocou enquanto buscava
+        if (!reviews.length) {
+          reviewsBox.innerHTML = '<p class="modal-bottle-size">Ainda sem avaliações — seja a primeira pessoa a comprar e avaliar.</p>';
+          return;
+        }
+        const media = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+        reviewsBox.innerHTML = `
+          <div class="review-summary">
+            ${[1, 2, 3, 4, 5].map(n => `<span class="star${n <= Math.round(media) ? ' filled' : ''}">★</span>`).join('')}
+            <span>${media.toFixed(1)} · ${reviews.length} avaliaç${reviews.length === 1 ? 'ão' : 'ões'}</span>
+          </div>
+          <div class="review-list">
+            ${reviews.map(r => `
+              <div class="review-item">
+                <div class="review-item-head">
+                  <span class="review-item-name">${r.reviewer_name}</span>
+                  <div class="order-rating" aria-label="${r.rating} de 5 estrelas">
+                    ${[1, 2, 3, 4, 5].map(n => `<span class="star${n <= r.rating ? ' filled' : ''}">★</span>`).join('')}
+                  </div>
+                </div>
+                <span class="review-item-date">${new Date(r.created_at).toLocaleDateString('pt-BR')}</span>
+                ${r.comment ? `<p>"${r.comment}"</p>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      });
+    }
   }
   const modalClose = document.getElementById('modalClose');
   if (modalClose) modalClose.addEventListener('click', closeAllPanels);
@@ -391,6 +424,7 @@
           <div class="product-info">
             <span class="p-eyebrow">${p.family}</span>
             <h3>${p.name}</h3>
+            <div class="card-rating" data-cardrating="${p.id}" hidden></div>
             <div class="product-notes">
               <span class="note-pill">${(p.top || '—').split(',')[0]}</span>
               <span class="note-pill">${(p.heart || '—').split(',')[0]}</span>
@@ -406,13 +440,26 @@
         </article>
       `;
     }
+    function loadCardRatings(list) {
+      if (!window.emAuth || !window.emAuth.isConfigured || !list.length) return;
+      window.emAuth.getReviewsSummary(list.map(p => p.id)).then(resumo => {
+        resumo.forEach(r => {
+          const el = productGrid.querySelector(`[data-cardrating="${r.product_id}"]`);
+          if (!el) return;
+          el.hidden = false;
+          el.innerHTML = `<span class="star">★</span> ${r.media} <span>(${r.total})</span>`;
+        });
+      });
+    }
     function renderGrid(list) {
       productGrid.innerHTML = list.length ? list.map(cardHtml).join('') : '<p class="catalog-empty">Nenhum perfume encontrado com esses filtros.</p>';
+      loadCardRatings(list);
     }
     function appendCards(list) {
       if (!list.length) return;
       productGrid.querySelector('.catalog-empty')?.remove();
       productGrid.insertAdjacentHTML('beforeend', list.map(cardHtml).join(''));
+      loadCardRatings(list);
     }
 
     const searchInput = document.getElementById('searchInput');

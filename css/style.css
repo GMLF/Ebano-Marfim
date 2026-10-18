@@ -1231,7 +1231,45 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   color:var(--line-strong); cursor:pointer; transition:color .15s, transform .15s;
 }
 .star-btn:hover{ color:var(--accent); transform:scale(1.15); }
+.star-btn.filled{ color:var(--accent); }
 .star-btn[disabled]{ opacity:.5; cursor:not-allowed; }
+
+.product-review-row{
+  border-top:1px solid var(--line);
+  padding-top:12px;
+  margin-top:12px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px 12px;
+}
+.product-review-name{ font-size:.85rem; color:var(--text-dim); flex:1 1 100%; }
+.product-review-comment{ font-size:.85rem; color:var(--text-faint); font-style:italic; flex:1 1 100%; margin:0; }
+.product-review-text{
+  flex:1 1 220px;
+  min-width:160px;
+  padding:8px 10px;
+  border:1px solid var(--line-strong);
+  border-radius:4px;
+  background:var(--bg);
+  color:var(--text);
+  font-family:inherit;
+  font-size:.82rem;
+  resize:vertical;
+}
+
+/* estrelas e comentário público numa avaliação de produto (quick view) */
+.review-summary{ display:flex; align-items:center; gap:6px; font-size:.82rem; color:var(--text-faint); }
+.review-summary .star{ font-size:.95rem; color:var(--line-strong); }
+.review-summary .star.filled{ color:var(--accent); }
+.review-list{ display:flex; flex-direction:column; gap:14px; margin-top:4px; }
+.review-item{ border-top:1px solid var(--line); padding-top:12px; }
+.review-item-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.review-item-name{ font-size:.86rem; color:var(--text); font-weight:500; }
+.review-item-date{ font-size:.72rem; color:var(--text-faint); }
+.review-item p{ margin-top:6px; font-size:.86rem; color:var(--text-dim); }
+.card-rating{ display:flex; align-items:center; gap:4px; font-size:.74rem; color:var(--text-faint); margin-top:2px; }
+.card-rating .star{ font-size:.82rem; color:var(--accent); }
 .config-warning{
   max-width:480px; margin:0 auto 20px;
   border:1px solid var(--accent);

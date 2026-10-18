@@ -52,7 +52,7 @@
 
   summaryItems.innerHTML = cart.map(i => `
     <div class="order-summary-item">
-      <span>${i.name} · ${i.size === 'full' ? 'frasco' : i.size + 'ml'} ×${i.qty}</span>
+      <span>${i.name} · frasco ${i.ml}ml ×${i.qty}</span>
       <span>${fmt(i.price * i.qty)}</span>
     </div>
   `).join('');
@@ -156,7 +156,7 @@
     const opcoes = ehLondrina(cidade) ? [ENTREGA_LOCAL] : [];
 
     if (window.emAuth && window.emAuth.isConfigured) {
-      const result = await window.emAuth.calcularFrete(cep, cart.map(i => ({ size: i.size, qty: i.qty })));
+      const result = await window.emAuth.calcularFrete(cep, cart.map(i => ({ qty: i.qty })));
       if (!result.error && result.opcoes) opcoes.push(...result.opcoes);
     }
 

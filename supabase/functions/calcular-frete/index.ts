@@ -14,17 +14,12 @@
 
 const SUPERFRETE_URL = 'https://api.superfrete.com/api/v0/calculator';
 
-// Peso aproximado (kg) já considerando embalagem, por tipo de item vendido.
-// São estimativas — ajuste aqui se pesar os produtos de verdade na balança.
-const PESO_POR_ITEM: Record<string, number> = {
-  '3': 0.06,
-  '5': 0.08,
-  '10': 0.11,
-  full: 0.35
-};
+// Peso aproximado (kg) de um frasco fechado já embalado — único formato
+// vendido no momento. É estimativa — ajuste aqui se pesar na balança.
+const PESO_POR_FRASCO = 0.35;
 
-// Caixa pequena padrão (cm) — cobre a maioria dos pedidos de decant.
-const CAIXA_PADRAO = { altura: 4, largura: 12, comprimento: 16 };
+// Caixa pequena padrão (cm) — cobre a maioria dos pedidos.
+const CAIXA_PADRAO = { altura: 6, largura: 12, comprimento: 16 };
 
 // Só o nosso próprio site (e o ambiente local de testes) pode chamar esta função.
 // Sem essa lista, qualquer outra página poderia usar nossa cota do SuperFrete escondida.
@@ -61,10 +56,7 @@ Deno.serve(async req => {
 
     const pesoTotal = Math.max(
       0.1,
-      items.reduce((soma: number, item: { size: string; qty: number }) => {
-        const pesoUnitario = PESO_POR_ITEM[item.size] ?? PESO_POR_ITEM['10'];
-        return soma + pesoUnitario * (item.qty || 1);
-      }, 0)
+      items.reduce((soma: number, item: { qty: number }) => soma + PESO_POR_FRASCO * (item.qty || 1), 0)
     );
 
     const token = Deno.env.get('SUPERFRETE_TOKEN');

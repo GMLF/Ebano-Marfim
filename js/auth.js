@@ -92,6 +92,40 @@
     return { error: error ? error.message : null };
   }
 
+  /* avaliação por produto (diferente da nota do pedido inteiro acima) —
+     fica pública na página do produto pra quem for comprar ver */
+  async function avaliarProduto(orderId, productId, nota, comentario, nome) {
+    if (!client) return { error: NOT_CONFIGURED_MSG };
+    const { error } = await client.rpc('avaliar_produto', {
+      pedido_id: orderId, produto_id: productId, nota, texto: comentario || '', nome
+    });
+    return { error: error ? error.message : null };
+  }
+  async function getMyProductReviews() {
+    if (!client) return [];
+    const session = await getSession();
+    if (!session) return [];
+    const { data, error } = await client
+      .from('product_reviews')
+      .select('order_id, product_id, rating, comment')
+      .eq('user_id', session.user.id);
+    return error ? [] : data;
+  }
+  async function getProductReviews(productId) {
+    if (!client) return [];
+    const { data, error } = await client
+      .from('product_reviews')
+      .select('rating, comment, reviewer_name, created_at')
+      .eq('product_id', productId)
+      .order('created_at', { ascending: false });
+    return error ? [] : data;
+  }
+  async function getReviewsSummary(productIds) {
+    if (!client || !productIds.length) return [];
+    const { data, error } = await client.rpc('resumo_avaliacoes', { produto_ids: productIds });
+    return error ? [] : data;
+  }
+
   async function isAdmin() {
     if (!client) return false;
     const session = await getSession();
@@ -203,6 +237,7 @@
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
     saveOrder, getOrders, avaliarPedido, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete, criarPagamento,
+    avaliarProduto, getMyProductReviews, getProductReviews, getReviewsSummary,
     getCatalogPage, getCatalogBrands, getCatalogMatches, getPricesFor, getCatalogProduct
   };
 

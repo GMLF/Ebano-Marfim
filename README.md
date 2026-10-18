@@ -256,6 +256,17 @@ Rode `supabase/order_reviews.sql` no SQL Editor do Supabase. Ele adiciona:
 
 Em **Minha Conta**, todo pedido com status "Entregue" ganha um seletor de estrelas (1 a 5) — clicou, já salva, sem precisar de mais nada. Pedidos em outros status não mostram a opção de avaliar. No painel de admin, a nota aparece junto de cada pedido em "Pedidos e envio", e tem um card **"Avaliação média"** no topo do dashboard, calculado sobre os pedidos avaliados no período selecionado.
 
+## Avaliação por produto (visível pra quem for comprar)
+
+Diferente da avaliação acima (que é do pedido inteiro, só pro próprio cliente e o admin verem), esta é por perfume e fica **pública** na página do produto — é o que aparece como estrelinha no card e como lista de comentários na quick view, pra quem ainda não comprou ver a opinião de quem já comprou.
+
+Rode `supabase/product_reviews.sql` no SQL Editor do Supabase. Ele cria:
+- A tabela `product_reviews` (nota, comentário, nome, data), com leitura pública (qualquer visitante, mesmo sem login) e escrita só através da função abaixo.
+- A função `avaliar_produto`, que confere que o pedido é do usuário logado, que já está "entregue", e que o produto avaliado realmente estava nesse pedido — ninguém consegue avaliar um perfume que não comprou.
+- A função `resumo_avaliacoes`, que devolve média e total de vários produtos de uma vez (usada na grade da Coleção, pra não fazer uma chamada por card).
+
+Em **Minha Conta**, cada item de um pedido "Entregue" ganha seu próprio seletor de estrelas + campo de comentário opcional (separado da nota do pedido inteiro). Depois de avaliado, o comentário já aparece ali mesmo e na página do produto.
+
 ## Funcionalidades
 
 - **Navegação por páginas separadas**: Início, Coleção, Quiz, Ateliê, Contato, Minha Conta e Checkout.
