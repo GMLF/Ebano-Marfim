@@ -7,7 +7,6 @@ window.PRODUCTS = [
       heart: 'Canela, cognac, caramelo, vanilla',
       base: 'Musgo de carvalho, fava tonka, cashmere, sândalo, âmbar, mirra',
       fullSize: 100, fullPrice: 259,
-      decants: { 3: 34, 5: 49, 10: 84 },
       matchNotes: ['caramelo', 'vanilla', 'ambar', 'bergamota']
     },
     {
@@ -18,7 +17,6 @@ window.PRODUCTS = [
       heart: 'Lactonas, vanilla de Madagascar',
       base: 'Âmbar-gris, cashmere, coco, musk, palo santo, absoluto de vanilla',
       fullSize: 100, fullPrice: 259,
-      decants: { 3: 34, 5: 49, 10: 84 },
       matchNotes: ['vanilla', 'musk', 'ambar', 'heliotropo']
     },
     {
@@ -29,7 +27,6 @@ window.PRODUCTS = [
       heart: 'Rosa-damascena, vanilla, canela, ambrette',
       base: 'Âmbar, couro',
       fullSize: 100, fullPrice: 259,
-      decants: { 3: 34, 5: 49, 10: 84 },
       matchNotes: ['rosa', 'vanilla', 'ambar', 'couro']
     },
     {
@@ -40,7 +37,6 @@ window.PRODUCTS = [
       heart: 'Gengibre, íris, noz-moscada',
       base: 'Âmbar, musk, cedro',
       fullSize: 100, fullPrice: 259,
-      decants: { 3: 34, 5: 49, 10: 84 },
       matchNotes: ['ambar', 'musk', 'cedro']
     },
     {
@@ -51,7 +47,6 @@ window.PRODUCTS = [
       heart: 'Coentro, rosa de maio, damasco, manjericão',
       base: 'Figo, ambrette, tâmaras, cenoura',
       fullSize: 100, fullPrice: 259,
-      decants: { 3: 34, 5: 49, 10: 84 },
       matchNotes: ['rosa']
     },
     {
@@ -62,7 +57,6 @@ window.PRODUCTS = [
       heart: 'Chá, rosa, amêndoa',
       base: 'Musk, vanilla, sândalo, cedro',
       fullSize: 50, fullPrice: 259,
-      decants: { 3: 34, 5: 49, 10: 84 },
       matchNotes: ['leite', 'vanilla', 'caramelo', 'cha', 'amendoa', 'sandalo', 'cedro', 'musk']
     },
     {
@@ -73,7 +67,6 @@ window.PRODUCTS = [
       heart: 'Leite, notas amadeiradas, heliotrópio',
       base: 'Vanilla, musk branco',
       fullSize: 50, fullPrice: 259,
-      decants: { 3: 34, 5: 49, 10: 84 },
       matchNotes: ['morango', 'caramelo', 'amendoa', 'leite', 'vanilla', 'musk-branco', 'heliotropo']
     },
     {
@@ -84,7 +77,6 @@ window.PRODUCTS = [
       heart: 'Vanilla, leite, fava tonka, caramelo',
       base: 'Âmbar, patchouli, musk',
       fullSize: 50, fullPrice: 259,
-      decants: { 3: 34, 5: 49, 10: 84 },
       matchNotes: ['cafe', 'jasmim', 'vanilla', 'leite', 'fava-tonka', 'caramelo', 'ambar', 'patchouli', 'musk']
     },
     {
@@ -95,7 +87,6 @@ window.PRODUCTS = [
       heart: 'Gerânio, lavanda, elemi, pimenta-rosa, vetiver',
       base: 'Cedro, ládano, ambroxan',
       fullSize: 100, fullPrice: 869,
-      decants: { 3: 115, 5: 169, 10: 285 },
       matchNotes: ['bergamota', 'pimenta-rosa', 'vetiver', 'cedro', 'ambar']
     },
     {
@@ -106,7 +97,6 @@ window.PRODUCTS = [
       heart: 'Cedro do Atlas, cashmere, patchouli',
       base: 'Vetiver, almíscar branco',
       fullSize: 100, fullPrice: 815,
-      decants: { 3: 105, 5: 159, 10: 269 },
       matchNotes: ['bergamota', 'pimenta-rosa', 'cedro', 'patchouli', 'couro']
     },
     {
@@ -117,7 +107,6 @@ window.PRODUCTS = [
       heart: 'Praliné, cacau',
       base: 'Vanilla, âmbar',
       fullSize: 100, fullPrice: 249,
-      decants: { 3: 32, 5: 49, 10: 82 },
       matchNotes: ['caramelo', 'vanilla', 'ambar', 'cafe']
     },
     {
@@ -128,7 +117,6 @@ window.PRODUCTS = [
       heart: 'Acorde gourmand, frutas tropicais',
       base: 'Vanilla, âmbar, musk',
       fullSize: 100, fullPrice: 199,
-      decants: { 3: 26, 5: 39, 10: 66 },
       matchNotes: ['heliotropo', 'vanilla', 'ambar', 'musk', 'caramelo']
     },
     {
@@ -139,7 +127,6 @@ window.PRODUCTS = [
       heart: 'Patchouli, café, íris',
       base: 'Âmbar, musk, madeiras',
       fullSize: 100, fullPrice: 209,
-      decants: { 3: 27, 5: 41, 10: 69 },
       matchNotes: ['patchouli', 'cafe', 'ambar', 'musk', 'couro']
     },
     {
@@ -150,7 +137,6 @@ window.PRODUCTS = [
       heart: 'Oud, caramelo, patchouli',
       base: 'Âmbar, resinas, incenso, musk',
       fullSize: 100, fullPrice: 239,
-      decants: { 3: 31, 5: 47, 10: 79 },
       matchNotes: ['rosa', 'oud', 'caramelo', 'patchouli', 'ambar', 'incenso', 'musk']
     },
     {
@@ -161,7 +147,6 @@ window.PRODUCTS = [
       heart: 'Lavanda, lichia, notas aquáticas, alecrim, cardamomo',
       base: 'Madeira de teca, fava tonka, vetiver',
       fullSize: 50, fullPrice: 259,
-      decants: { 3: 34, 5: 49, 10: 84 },
       matchNotes: ['bergamota', 'vetiver', 'fava-tonka']
     },
     {
@@ -172,7 +157,6 @@ window.PRODUCTS = [
       heart: 'Âmbar, notas florais',
       base: 'Musk, vanilla, madeiras transparentes',
       fullSize: 50, fullPrice: 259,
-      decants: { 3: 34, 5: 49, 10: 84 },
       matchNotes: ['pimenta-rosa', 'bergamota', 'ambar', 'vanilla', 'musk']
     },
     {
@@ -183,7 +167,6 @@ window.PRODUCTS = [
       heart: 'Sálvia-esclareia, cipreste, gengibre, pimenta',
       base: 'Âmbar, cardamomo, musk, sândalo, baunilha, vetiver, cedro-da-virgínia',
       fullSize: 100, fullPrice: 319,
-      decants: { 3: 30, 5: 55, 10: 80 },
       matchNotes: ['ambar', 'vanilla', 'musk', 'sandalo', 'bergamota']
     }
 ];

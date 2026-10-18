@@ -16,11 +16,8 @@
   let refreshCollectionGrid = null; // setado dentro do bloco da página coleção; chamado de novo quando os preços dinâmicos chegam
 
   const fmt = n => 'R$ ' + n.toLocaleString('pt-BR');
-  function priceOf(p, size) {
-    return size === 'full' ? p.fullPrice : p.decants[size];
-  }
-  function sizeLabel(size) {
-    return size === 'full' ? 'Frasco fechado' : `Decant ${size}ml`;
+  function priceOf(p) {
+    return p.fullPrice;
   }
   const catalogCache = new Map(); // id -> produto do catálogo importado, normalizado igual PRODUCTS
   function findProduct(id) { return PRODUCTS.find(x => x.id === id) || catalogCache.get(id); }
@@ -45,7 +42,6 @@
       base: row.base_notes || '',
       fullSize: row.bottle_ml || 100,
       fullPrice: precosPorTamanho.full || 0,
-      decants: { 3: precosPorTamanho[3] || 0, 5: precosPorTamanho[5] || 0, 10: precosPorTamanho[10] || 0 },
       matchNotes: row.match_notes || [],
       inStock,
       fromCatalog: true
@@ -228,29 +224,28 @@
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
     renderCart();
   }
-  function addToCart(productId, size) {
+  function addToCart(productId) {
     const p = findProduct(productId);
     if (!p) return;
-    size = size || 10;
     const cart = loadCart();
-    const price = priceOf(p, size);
-    const existing = cart.find(i => i.id === p.id && i.size === size);
+    const price = priceOf(p);
+    const existing = cart.find(i => i.id === p.id);
     if (existing) existing.qty += 1;
-    else cart.push({ id: p.id, name: p.name, img: p.img, size, price, qty: 1 });
+    else cart.push({ id: p.id, name: p.name, img: p.img, ml: p.fullSize, price, qty: 1 });
     saveCart(cart);
-    showToast(`${p.name} · ${sizeLabel(size)} adicionado à seleção`);
-    if (window.emAuth) window.emAuth.logEvent('add_to_cart', { product_id: p.id, name: p.name, size });
+    showToast(`${p.name} adicionado à seleção`);
+    if (window.emAuth) window.emAuth.logEvent('add_to_cart', { product_id: p.id, name: p.name });
   }
-  function changeQty(id, size, delta) {
+  function changeQty(id, delta) {
     const cart = loadCart();
-    const item = cart.find(i => i.id === id && i.size === size);
+    const item = cart.find(i => i.id === id);
     if (!item) return;
     item.qty += delta;
-    const filtered = item.qty <= 0 ? cart.filter(i => !(i.id === id && i.size === size)) : cart;
+    const filtered = item.qty <= 0 ? cart.filter(i => i.id !== id) : cart;
     saveCart(filtered);
   }
-  function removeItem(id, size) {
-    saveCart(loadCart().filter(i => !(i.id === id && i.size === size)));
+  function removeItem(id) {
+    saveCart(loadCart().filter(i => i.id !== id));
   }
 
   const cartCountEl = document.getElementById('cartCount');
@@ -267,23 +262,23 @@
     }
 
     if (!cart.length) {
-      drawerItems.innerHTML = '<p class="drawer-empty">Sua seleção está vazia.<br>Escolha um decant ou um frasco fechado.</p>';
+      drawerItems.innerHTML = '<p class="drawer-empty">Sua seleção está vazia.<br>Escolha um frasco fechado pra começar.</p>';
     } else {
       drawerItems.innerHTML = cart.map(i => `
         <div class="cart-item">
           <div class="cart-item-photo"><img src="${i.img}" alt="${i.name}"></div>
           <div>
             <div class="cart-item-name">${i.name}</div>
-            <div class="cart-item-size">${i.size === 'full' ? 'Frasco fechado' : `Decant ${i.size}ml`}</div>
+            <div class="cart-item-size">Frasco ${i.ml}ml</div>
             <div class="cart-item-qty">
-              <button data-qty="-1" data-id="${i.id}" data-size="${i.size}" aria-label="Diminuir quantidade">−</button>
+              <button data-qty="-1" data-id="${i.id}" aria-label="Diminuir quantidade">−</button>
               <span>${i.qty}</span>
-              <button data-qty="1" data-id="${i.id}" data-size="${i.size}" aria-label="Aumentar quantidade">+</button>
+              <button data-qty="1" data-id="${i.id}" aria-label="Aumentar quantidade">+</button>
             </div>
           </div>
           <div>
             <div class="cart-item-price">${fmt(i.price * i.qty)}</div>
-            <button class="cart-item-remove" data-remove data-id="${i.id}" data-size="${i.size}">remover</button>
+            <button class="cart-item-remove" data-remove data-id="${i.id}">remover</button>
           </div>
         </div>
       `).join('');
@@ -295,8 +290,8 @@
     drawerItems.addEventListener('click', e => {
       const qtyBtn = e.target.closest('[data-qty]');
       const removeBtn = e.target.closest('[data-remove]');
-      if (qtyBtn) changeQty(qtyBtn.dataset.id, qtyBtn.dataset.size === 'full' ? 'full' : Number(qtyBtn.dataset.size), Number(qtyBtn.dataset.qty));
-      if (removeBtn) removeItem(removeBtn.dataset.id, removeBtn.dataset.size === 'full' ? 'full' : Number(removeBtn.dataset.size));
+      if (qtyBtn) changeQty(qtyBtn.dataset.id, Number(qtyBtn.dataset.qty));
+      if (removeBtn) removeItem(removeBtn.dataset.id);
     });
   }
   renderCart();
@@ -351,7 +346,6 @@
     }
     if (!p || !modalBody || !modal || !overlay) return;
     if (window.emAuth) window.emAuth.logEvent('product_view', { product_id: p.id, name: p.name });
-    let selectedSize = 10;
     modalBody.innerHTML = `
       <div class="modal-visual${p.artBg ? ' full-art' : ''}"><img src="${p.img}" alt="${p.name}, ${p.brand}">${p.artBg ? '' : '<span class="modal-shine" aria-hidden="true"></span>'}</div>
       <div class="modal-info">
@@ -362,29 +356,14 @@
           <div class="pyramid-row"><b>Coração</b><span>${p.heart || '—'}</span></div>
           <div class="pyramid-row"><b>Fundo</b><span>${p.base || '—'}</span></div>
         </div>
-        <div class="size-row" id="sizeRow">
-          <button data-size="3">Decant<small>3ml · ${fmt(p.decants[3])}</small></button>
-          <button data-size="5">Decant<small>5ml · ${fmt(p.decants[5])}</small></button>
-          <button class="active" data-size="10">Decant<small>10ml · ${fmt(p.decants[10])}</small></button>
-          <button data-size="full">Frasco fechado<small>${p.fullSize}ml · ${fmt(p.fullPrice)}</small></button>
-        </div>
+        <p class="modal-bottle-size">Frasco fechado · ${p.fullSize}ml, lacrado de fábrica</p>
         <div class="modal-foot">
-          <span class="product-price" id="modalPrice">${fmt(p.decants[10])}</span>
+          <span class="product-price" id="modalPrice">${fmt(p.fullPrice)}</span>
           <button class="btn btn-solid" id="modalAddBtn" ${p.inStock === false ? 'disabled' : ''}>${p.inStock === false ? 'Esgotado' : 'Adicionar à seleção'}</button>
         </div>
       </div>
     `;
-    const sizeRow = modalBody.querySelector('#sizeRow');
-    const modalPrice = modalBody.querySelector('#modalPrice');
-    sizeRow.addEventListener('click', e => {
-      const btn = e.target.closest('button');
-      if (!btn) return;
-      sizeRow.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedSize = btn.dataset.size === 'full' ? 'full' : Number(btn.dataset.size);
-      modalPrice.textContent = fmt(priceOf(p, selectedSize));
-    });
-    modalBody.querySelector('#modalAddBtn').addEventListener('click', () => addToCart(p.id, selectedSize));
+    modalBody.querySelector('#modalAddBtn').addEventListener('click', () => addToCart(p.id));
 
     overlay.classList.add('open');
     modal.classList.add('open');
@@ -397,10 +376,9 @@
      ========================================================= */
   const productGrid = document.getElementById('productGrid');
   if (productGrid) {
-    const sizes = [3, 5, 10, 'full'];
     function cardHtml(p) {
       return `
-        <article class="product-card reveal in" data-id="${p.id}" data-brand="${p.brandFilter}" data-family="${p.familyFilter}" data-name="${p.name.toLowerCase()}" data-selected-size="10">
+        <article class="product-card reveal in" data-id="${p.id}" data-brand="${p.brandFilter}" data-family="${p.familyFilter}" data-name="${p.name.toLowerCase()}">
           <div class="product-visual${p.artBg ? ' full-art' : ''}">
             <span class="brand-tag">${p.brand}</span>
             ${p.inStock === false ? '<span class="status-badge status-cancelado stock-badge">Esgotado</span>' : ''}
@@ -418,11 +396,8 @@
               <span class="note-pill">${(p.heart || '—').split(',')[0]}</span>
               <span class="note-pill">${(p.base || '—').split(',')[0]}</span>
             </div>
-            <div class="qty-pills" data-sizepills="${p.id}">
-              ${sizes.map(s => `<button data-size="${s}" class="${s === 10 ? 'active' : ''}">${s === 'full' ? `Frasco ${p.fullSize}ml` : s + 'ml'}</button>`).join('')}
-            </div>
             <div class="product-foot">
-              <span class="product-price" data-priceof="${p.id}">${fmt(priceOf(p, 10))}</span>
+              <span class="product-price">${fmt(p.fullPrice)} <small>· frasco ${p.fullSize}ml</small></span>
               <button class="add-cart-btn" data-quickadd="${p.id}" aria-label="Adicionar ${p.name} ao carrinho" ${p.inStock === false ? 'disabled' : ''}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h2l2.4 12.6a2 2 0 0 0 2 1.6h7.4a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>
               </button>
@@ -536,26 +511,13 @@
 
     // clique no card abre a quick view; controles internos (tamanho/carrinho) não propagam pra isso
     productGrid.addEventListener('click', e => {
-      const pillBtn = e.target.closest('.qty-pills button');
       const quickAddBtn = e.target.closest('[data-quickadd]');
       const quickViewBtn = e.target.closest('[data-quickview]');
       const card = e.target.closest('.product-card');
       if (!card) return;
 
-      if (pillBtn) {
-        const pillsWrap = pillBtn.closest('.qty-pills');
-        pillsWrap.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-        pillBtn.classList.add('active');
-        const size = pillBtn.dataset.size === 'full' ? 'full' : Number(pillBtn.dataset.size);
-        card.dataset.selectedSize = size;
-        const id = pillsWrap.dataset.sizepills;
-        const p = findProduct(id);
-        card.querySelector(`[data-priceof="${id}"]`).textContent = fmt(priceOf(p, size));
-        return;
-      }
       if (quickAddBtn) {
-        const size = card.dataset.selectedSize === 'full' ? 'full' : Number(card.dataset.selectedSize);
-        addToCart(quickAddBtn.dataset.quickadd, size);
+        addToCart(quickAddBtn.dataset.quickadd);
         return;
       }
       // qualquer outro clique no card (incluindo a lupa) abre a quick view
@@ -816,7 +778,8 @@
      preços dinâmicos (Supabase) — todas as páginas com catálogo
      data/products.js continua sendo o valor inicial (site funciona mesmo
      sem Supabase configurado); quando product_prices responde, sobrepõe
-     fullPrice/decants/inStock nos produtos já carregados e re-renderiza.
+     fullPrice/inStock nos produtos já carregados e re-renderiza.
+     Só lemos o preço de frasco fechado — não vendemos decant no momento.
      Busca só os preços dos produtos curados (por id) — a tabela inteira
      cresce pra dezenas de milhares de linhas com o catálogo importado
      (js/auth.js:getCatalogPage já busca preço filtrado pra esses).
@@ -825,10 +788,10 @@
     window.emAuth.getPricesFor(PRODUCTS.map(p => p.id)).then(rows => {
       if (!rows.length) return;
       rows.forEach(row => {
+        if (row.size !== 'full') return;
         const p = findProduct(row.product_id);
         if (!p) return;
-        if (row.size === 'full') p.fullPrice = Number(row.price);
-        else p.decants[Number(row.size)] = Number(row.price);
+        p.fullPrice = Number(row.price);
         p.inStock = row.in_stock !== false;
       });
       if (refreshCollectionGrid) refreshCollectionGrid();

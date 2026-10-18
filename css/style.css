@@ -781,7 +781,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 @media (hover: none){
   .quick-view-btn{ opacity:1; transform:none; width:40px; height:40px; }
   .product-card:active{ transform:scale(.98); box-shadow:var(--shadow); }
-  .add-cart-btn, .qty-pills button{ min-height:40px; }
+  .add-cart-btn{ min-height:40px; }
 }
 
 .product-info{ padding:22px 22px 24px; display:flex; flex-direction:column; gap:10px; flex:1; }
@@ -796,15 +796,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   color:var(--text-faint);
 }
 
-.qty-pills{ display:flex; gap:6px; flex-wrap:wrap; margin-top:2px; }
-.qty-pills button{
-  border:1px solid var(--line-strong);
-  background:none; color:var(--text-dim);
-  padding:6px 11px; border-radius:999px; font-size:.82rem;
-  transition:background .2s, color .2s, border-color .2s;
-}
-.qty-pills button.active{ background:var(--text); color:var(--bg); border-color:var(--text); }
-.qty-pills button:hover:not(.active){ border-color:var(--accent); color:var(--accent); }
+.product-price small{ color:var(--text-faint); font-weight:400; }
 
 .product-foot{
   margin-top:auto;
@@ -1057,7 +1049,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 .modal-body{ display:grid; grid-template-columns:1fr 1fr; }
 .modal-visual{
-  min-height:580px; display:grid; place-items:center; position:relative;
+  min-height:460px; display:grid; place-items:center; position:relative;
   background:radial-gradient(130% 100% at 50% 6%, #EEEEEC 0%, #D8D8D5 78%);
   overflow:hidden;
 }
@@ -1116,16 +1108,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .pyramid-row{ display:flex; gap:12px; align-items:baseline; }
 .pyramid-row b{ min-width:74px; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
 .pyramid-row span{ font-size:.88rem; color:var(--text-dim); }
-.size-row{ display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; }
-.size-row button{
-  border:1px solid var(--line-strong);
-  background:none; color:var(--text);
-  padding:8px 14px; border-radius:4px; font-size:.82rem;
-  display:flex; flex-direction:column; align-items:flex-start; gap:2px;
-}
-.size-row button small{ font-size:.82rem; color:var(--text-faint); }
-.size-row button.active{ background:var(--text); color:var(--bg); border-color:var(--text); }
-.size-row button.active small{ color:var(--bg-soft); }
+.modal-bottle-size{ font-size:.9rem; color:var(--text-dim); margin-top:2px; }
 .modal-foot{ margin-top:auto; display:flex; align-items:center; justify-content:space-between; gap:16px; }
 @media (max-width:640px){ .modal-body{ grid-template-columns:1fr; } .modal-visual{ min-height:380px; } .modal-info{ padding:30px 24px; } }
 
