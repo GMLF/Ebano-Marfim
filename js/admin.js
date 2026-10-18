@@ -236,12 +236,27 @@
     });
   }
 
+  function wireDashboardTabs() {
+    const tabs = document.querySelectorAll('.dashboard-tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+        tab.classList.add('active');
+        tab.setAttribute('aria-selected', 'true');
+        document.querySelectorAll('.dashboard-panel').forEach(panel => {
+          panel.hidden = panel.dataset.dashPanel !== tab.dataset.dashTab;
+        });
+      });
+    });
+  }
+
   async function loadDashboard() {
     [allOrders, allEvents] = await Promise.all([
       window.emAuth.getAllOrdersWithEmail(),
       window.emAuth.getAnalyticsEvents()
     ]);
     wireFilters();
+    wireDashboardTabs();
     renderForFilter();
     renderFulfillment();
     document.getElementById('filterStatus').addEventListener('change', renderFulfillment);

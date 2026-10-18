@@ -1390,15 +1390,26 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 /* =========================================================
    dashboard admin
    ========================================================= */
-/* zonas do dashboard (Comportamento / Vendas / Operação) — título
-   próprio por zona em vez de uma sopa só de cards soltos */
-.dashboard-section{ margin:40px 0 16px; }
-.dashboard-section:first-of-type{ margin-top:32px; }
-.dashboard-section-title{ font-size:1.3rem; margin-top:8px; }
-.dashboard-grid-2{ grid-template-columns:1fr 1fr; margin-top:16px; }
+/* abas do dashboard (Comportamento / Vendas / Operação) — só os KPIs
+   do topo ficam sempre visíveis, o resto troca de aba em vez de
+   empilhar tudo numa rolagem só */
+.dashboard-tabs{
+  display:flex; gap:4px; flex-wrap:wrap;
+  border-bottom:1px solid var(--line);
+  margin:32px 0 28px;
+}
+.dashboard-tab{
+  background:none; border:none; border-bottom:2px solid transparent;
+  padding:10px 4px; margin-bottom:-1px;
+  font-family:inherit; font-size:.92rem; color:var(--text-faint);
+  transition:color .2s, border-color .2s;
+}
+.dashboard-tab + .dashboard-tab{ margin-left:22px; }
+.dashboard-tab:hover{ color:var(--text-dim); }
+.dashboard-tab.active{ color:var(--text); font-weight:500; border-color:var(--accent); }
+.dashboard-panel{ display:flex; flex-direction:column; gap:16px; }
+.dashboard-grid-2{ grid-template-columns:1fr 1fr; }
 @media (max-width:860px){ .dashboard-grid-2{ grid-template-columns:1fr; } }
-.checkout-grid + .checkout-card{ margin-top:16px; }
-.checkout-card + .dashboard-section{ margin-top:40px; }
 
 .stat-grid{
   display:grid;
