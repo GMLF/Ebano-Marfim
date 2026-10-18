@@ -22,11 +22,12 @@
     const { error } = await client.auth.signInWithPassword({ email, password });
     return { error: error ? error.message : null };
   }
-  async function signInWithGoogle() {
+  async function signInWithGoogle(redirectPage) {
     if (!client) return { error: NOT_CONFIGURED_MSG };
+    const destino = redirectPage || 'conta';
     const { error } = await client.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + window.location.pathname.replace(/[^/]+$/, '') + 'conta' }
+      options: { redirectTo: window.location.origin + window.location.pathname.replace(/[^/]+$/, '') + destino }
     });
     return { error: error ? error.message : null };
   }
@@ -86,6 +87,18 @@
       .order('created_at', { ascending: false });
     return error ? [] : data;
   }
+  /* esteira de Minha Conta atualiza sozinha quando o admin muda o status —
+     Realtime do Supabase já filtra pela RLS da tabela (só os próprios
+     pedidos chegam), não precisa repetir o filtro de usuário aqui */
+  function subscribeToMyOrders(onChange) {
+    if (!client) return () => {};
+    const channel = client
+      .channel('minhas-compras')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, onChange)
+      .subscribe();
+    return () => client.removeChannel(channel);
+  }
+
   async function avaliarPedido(orderId, nota) {
     if (!client) return { error: NOT_CONFIGURED_MSG };
     const { error } = await client.rpc('avaliar_pedido', { pedido_id: orderId, nota });
@@ -236,7 +249,7 @@
   window.emAuth = {
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
-    saveOrder, getOrders, avaliarPedido, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete, criarPagamento,
+    saveOrder, getOrders, subscribeToMyOrders, avaliarPedido, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete, criarPagamento,
     avaliarProduto, getMyProductReviews, getProductReviews, getReviewsSummary,
     getCatalogPage, getCatalogBrands, getCatalogMatches, getPricesFor, getCatalogProduct
   };

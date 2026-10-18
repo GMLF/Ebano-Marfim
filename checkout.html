@@ -84,7 +84,65 @@
       <b>Pagamento via InfinitePay.</b> Cartão e Pix são processados numa página segura da InfinitePay, fora do nosso site — a gente nunca vê nem guarda dado de cartão. Enquanto isso não estiver configurado no servidor, esse fluxo funciona como demonstração e nenhuma cobrança real é feita.
     </div>
 
-    <div id="checkoutContent">
+    <!-- precisa estar logado pra finalizar: garante que o pedido fica salvo e
+         rastreável em Minha Conta, em vez de sumir se for visita anônima -->
+    <div id="checkoutAuthGate" hidden>
+      <div class="section-head" style="justify-content:center; text-align:center; flex-direction:column; align-items:center; margin-bottom:28px;">
+        <span class="eyebrow">Só mais um passo</span>
+        <h2 style="margin-top:12px;">Entre pra finalizar seu pedido</h2>
+        <p class="lede" style="margin-top:10px;">Assim seu pedido fica salvo e você acompanha o envio em Minha Conta.</p>
+      </div>
+      <div class="auth-panel gilded-frame" style="max-width:420px;">
+        <div class="auth-tabs">
+          <button data-ck-tab="login" class="active" type="button">Entrar</button>
+          <button data-ck-tab="signup" type="button">Criar conta</button>
+        </div>
+        <form class="auth-form active" id="ckLoginForm" data-ck-panel="login">
+          <div>
+            <label for="ckLoginEmail">E-mail</label>
+            <div class="input-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+              <input type="email" id="ckLoginEmail" required autocomplete="email">
+            </div>
+          </div>
+          <div>
+            <label for="ckLoginPassword">Senha</label>
+            <div class="input-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              <input type="password" id="ckLoginPassword" required autocomplete="current-password">
+            </div>
+          </div>
+          <span class="auth-msg" id="ckLoginMsg"></span>
+          <button type="submit" class="btn btn-solid">Entrar</button>
+        </form>
+        <form class="auth-form" id="ckSignupForm" data-ck-panel="signup">
+          <div>
+            <label for="ckSignupEmail">E-mail</label>
+            <div class="input-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+              <input type="email" id="ckSignupEmail" required autocomplete="email">
+            </div>
+          </div>
+          <div>
+            <label for="ckSignupPassword">Senha</label>
+            <div class="input-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              <input type="password" id="ckSignupPassword" required minlength="6" autocomplete="new-password">
+            </div>
+          </div>
+          <span class="auth-msg" id="ckSignupMsg"></span>
+          <button type="submit" class="btn btn-solid">Criar conta</button>
+        </form>
+        <div class="auth-divider">ou</div>
+        <button class="btn btn-google" id="ckGoogleBtn" type="button">
+          <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.66-.22-2.44H12v4.62h6.48a5.54 5.54 0 0 1-2.4 3.63v3.02h3.87c2.27-2.09 3.57-5.17 3.57-8.83z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.95-2.9l-3.87-3.02c-1.08.72-2.45 1.15-4.08 1.15-3.13 0-5.78-2.12-6.73-4.96H1.28v3.11A11.998 11.998 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.27 14.27A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.27V6.62H1.28A11.998 11.998 0 0 0 0 12c0 1.93.46 3.76 1.28 5.38l3.99-3.11z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42A11.5 11.5 0 0 0 12 0 11.998 11.998 0 0 0 1.28 6.62l3.99 3.11C6.22 6.87 8.87 4.75 12 4.75z"/></svg>
+          Continuar com Google
+        </button>
+        <p style="text-align:center; margin-top:16px; font-size:.78rem; color:var(--text-faint);">Esqueceu a senha? <a href="conta" style="color:var(--accent);">Recupere em Minha Conta</a>.</p>
+      </div>
+    </div>
+
+    <div id="checkoutContent" hidden>
       <div class="checkout-steps" id="checkoutSteps">
         <button type="button" class="checkout-step-pill active reachable" data-step-pill="1">
           <span class="step-dot">

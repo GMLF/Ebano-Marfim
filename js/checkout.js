@@ -48,6 +48,78 @@
     return;
   }
 
+  /* =========================================================
+     gate de login — precisa estar logado pra finalizar, senão o
+     pedido não tem como ficar salvo/rastreável em Minha Conta
+     ========================================================= */
+  const authGate = document.getElementById('checkoutAuthGate');
+  const checkoutContentEl = document.getElementById('checkoutContent');
+
+  function wireAuthGate() {
+    document.querySelectorAll('[data-ck-tab]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('[data-ck-tab]').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('[data-ck-panel]').forEach(f => f.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelector(`[data-ck-panel="${tab.dataset.ckTab}"]`).classList.add('active');
+      });
+    });
+    document.getElementById('ckLoginForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const msg = document.getElementById('ckLoginMsg');
+      msg.classList.remove('err');
+      msg.textContent = 'Entrando...';
+      const { error } = await window.emAuth.signIn(
+        document.getElementById('ckLoginEmail').value.trim(),
+        document.getElementById('ckLoginPassword').value
+      );
+      if (error) { msg.textContent = error; msg.classList.add('err'); }
+      else msg.textContent = '';
+      // onChange cuida de revelar o checkout assim que a sessão existir
+    });
+    document.getElementById('ckSignupForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const msg = document.getElementById('ckSignupMsg');
+      msg.classList.remove('err');
+      msg.textContent = 'Criando conta...';
+      const { error } = await window.emAuth.signUp(
+        document.getElementById('ckSignupEmail').value.trim(),
+        document.getElementById('ckSignupPassword').value
+      );
+      if (error) { msg.textContent = error; msg.classList.add('err'); return; }
+      const session = await window.emAuth.getSession();
+      msg.textContent = session ? '' : 'Conta criada! Confira seu e-mail pra confirmar e depois volte pra finalizar o pedido.';
+    });
+    document.getElementById('ckGoogleBtn').addEventListener('click', async () => {
+      const { error } = await window.emAuth.signInWithGoogle('checkout');
+      if (error) alert(error);
+    });
+  }
+
+  function showAuthGate() {
+    authGate.hidden = false;
+    checkoutContentEl.hidden = true;
+  }
+  function showCheckoutContent() {
+    authGate.hidden = true;
+    checkoutContentEl.hidden = false;
+  }
+
+  if (window.emAuth && window.emAuth.isConfigured) {
+    wireAuthGate();
+    window.emAuth.getSession().then(session => {
+      if (session) showCheckoutContent();
+      else showAuthGate();
+    });
+    window.emAuth.onChange(session => {
+      if (session) showCheckoutContent();
+    });
+  } else {
+    // Supabase não configurado neste site: não dá pra exigir login que não existe,
+    // segue no fluxo de demonstração sem gate (mesmo comportamento de antes).
+    showCheckoutContent();
+  }
+
   if (window.emAuth) window.emAuth.logEvent('checkout_start', { item_count: cart.length, subtotal });
 
   summaryItems.innerHTML = cart.map(i => `

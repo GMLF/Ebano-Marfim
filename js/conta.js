@@ -31,6 +31,40 @@
   const ordersBox = document.getElementById('accountOrders');
   const STATUS_LABEL = { pendente: 'Pendente', pago: 'Pago', enviado: 'Enviado', entregue: 'Entregue', cancelado: 'Cancelado' };
 
+  /* esteira de acompanhamento — Pago → Enviado → Entregue, fica verde
+     conforme avança. "pendente" ainda não passou do primeiro passo;
+     "cancelado" não faz sentido numa esteira, mostra como estado à parte. */
+  const TRACKER_STEPS = [
+    { key: 'pago', label: 'Pago', icon: '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M6.5 14.5h4"/>' },
+    { key: 'enviado', label: 'Enviado', icon: '<path d="M3 8.5L12 4l9 4.5-9 4.5-9-4.5z"/><path d="M3 8.5V16l9 4.5 9-4.5V8.5"/><path d="M12 13v7.5"/>' },
+    { key: 'entregue', label: 'Entregue', icon: '<path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1v-9"/>' }
+  ];
+  const STATUS_ORDER = ['pendente', 'pago', 'enviado', 'entregue'];
+  function pedidoTrackerHtml(o) {
+    if (o.status === 'cancelado') {
+      return `<div class="status-badge status-cancelado" style="margin-top:12px;">Pedido cancelado</div>`;
+    }
+    const atual = STATUS_ORDER.indexOf(o.status);
+    return `<div class="checkout-steps" style="margin:14px 0 0;" aria-label="Status do pedido: ${STATUS_LABEL[o.status] || 'Pendente'}">
+      ${TRACKER_STEPS.map((step, i) => {
+        const alvo = i + 1; // pago=1, enviado=2, entregue=3 no STATUS_ORDER
+        const done = atual > alvo || (alvo === TRACKER_STEPS.length && atual === alvo);
+        const active = atual === alvo && !done;
+        const cls = ['checkout-step-pill'];
+        if (active) cls.push('active');
+        if (done) cls.push('done');
+        const linha = i > 0 ? `<span class="step-line${atual >= alvo ? ' done' : ''}"></span>` : '';
+        return `${linha}<div class="${cls.join(' ')}">
+          <span class="step-dot">
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${step.icon}</svg>
+            <svg class="step-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg>
+          </span>
+          <span class="step-label">${step.label}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
   function estrelasHtml(o) {
     if (o.status !== 'entregue') return '';
     if (o.rating) {
@@ -94,6 +128,7 @@
           <span class="status-badge status-${o.status || 'pendente'}">${STATUS_LABEL[o.status] || 'Pendente'}</span>
           <span>${o.payment_method === 'pix' ? 'Pix' : 'Cartão'} · ${fmt(o.subtotal)}</span>
         </div>
+        ${pedidoTrackerHtml(o)}
         ${estrelasHtml(o)}
         ${produtosAvaliacaoHtml(o, minhasAvaliacoes)}
       </div>
@@ -145,6 +180,7 @@
     });
   }
 
+  let unsubscribeOrders = null;
   function showAccount(session) {
     guestView.hidden = true;
     accountView.classList.add('active');
@@ -156,8 +192,13 @@
       const adminLink = document.getElementById('adminLink');
       if (adminLink) adminLink.hidden = !admin;
     });
+    // esteira atualiza sozinha quando o admin muda o status de um pedido,
+    // sem precisar recarregar a página (evita empilhar inscrição repetida)
+    if (unsubscribeOrders) unsubscribeOrders();
+    unsubscribeOrders = window.emAuth.subscribeToMyOrders(renderOrders);
   }
   function showGuest() {
+    if (unsubscribeOrders) { unsubscribeOrders(); unsubscribeOrders = null; }
     guestView.hidden = false;
     accountView.classList.remove('active');
   }

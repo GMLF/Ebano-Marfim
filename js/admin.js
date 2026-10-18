@@ -134,13 +134,17 @@
     const uniqueSessionsFor = type => new Set(events.filter(e => e.event_type === type).map(e => e.session_id)).size;
     const counts = stages.map(([type]) => uniqueSessionsFor(type));
     const maxCount = Math.max(1, ...counts);
-    document.getElementById('funnelList').innerHTML = stages.map(([, label], i) => `
+    document.getElementById('funnelList').innerHTML = stages.map(([, label], i) => {
+      // conversão em relação à etapa anterior — mostra onde a maior parte desiste
+      const conversao = i === 0 || !counts[i - 1] ? null : Math.round(100 * counts[i] / counts[i - 1]);
+      return `
       <div class="funnel-row">
         <span>${label}</span>
         <div class="quiz-bar" style="flex:1; margin:0 14px;"><i style="width:${Math.max(4, Math.round(100 * counts[i] / maxCount))}%"></i></div>
-        <span>${counts[i]}</span>
+        <span>${counts[i]}${conversao !== null ? ` <span style="color:var(--text-faint);">(${conversao}%)</span>` : ''}</span>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   function wireFilters() {
