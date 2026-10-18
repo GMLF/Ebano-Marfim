@@ -64,10 +64,12 @@
       payment_method: order.paymentMethod,
       shipping_carrier: order.shippingCarrier,
       shipping_service: order.shippingService,
+      shipping_service_id: order.shippingServiceId,
       shipping_price: order.shippingPrice,
       shipping_days: order.shippingDays,
       recipient_name: order.recipientName,
       recipient_phone: order.recipientPhone,
+      recipient_document: order.recipientDocument,
       cep: order.cep,
       street: order.street,
       number: order.number,
@@ -198,6 +200,21 @@
     const { error } = await client.rpc('admin_update_order_status', { pedido_id: orderId, novo_status: status });
     return { error: error ? error.message : null };
   }
+  /* compra a etiqueta de envio de verdade no SuperFrete (gasta saldo da
+     conta) — só admin, chamado a partir de "Pedidos e envio" */
+  async function comprarEtiqueta(orderId) {
+    if (!client) return { error: NOT_CONFIGURED_MSG };
+    const { data, error } = await client.functions.invoke('comprar-etiqueta', { body: { orderId } });
+    if (error) return { error: (data && data.error) || 'Não foi possível comprar a etiqueta agora.' };
+    return data;
+  }
+  /* cliente confirma que recebeu — cobre a entrega própria em Londrina,
+     que nunca passa por transportadora pro SuperFrete avisar sozinho */
+  async function confirmarRecebimento(orderId) {
+    if (!client) return { error: NOT_CONFIGURED_MSG };
+    const { error } = await client.rpc('confirmar_recebimento', { pedido_id: orderId });
+    return { error: error ? error.message : null };
+  }
   async function getAnalyticsEvents() {
     if (!client) return [];
     const { data, error } = await client
@@ -250,6 +267,7 @@
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
     saveOrder, getOrders, subscribeToMyOrders, avaliarPedido, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete, criarPagamento,
+    comprarEtiqueta, confirmarRecebimento,
     avaliarProduto, getMyProductReviews, getProductReviews, getReviewsSummary,
     getCatalogPage, getCatalogBrands, getCatalogMatches, getPricesFor, getCatalogProduct
   };

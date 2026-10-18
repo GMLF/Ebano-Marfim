@@ -247,6 +247,36 @@ Rode `supabase/order_fulfillment.sql` no SQL Editor do Supabase. Ele adiciona:
 
 No `admin.html`, a seção **"Pedidos e envio"** lista todos os pedidos (não filtra por período, de propósito — um pedido parado há semanas ainda precisa aparecer) com o endereço de entrega e um seletor de status editável direto ali.
 
+## Compra de etiqueta e rastreio automático (SuperFrete)
+
+Depois que o pedido está `pago`, o admin compra a etiqueta de envio direto do painel — o SuperFrete gera o rastreio, e o próprio SuperFrete avisa o site quando o pacote é postado/entregue, sem precisar atualizar o status à mão. Cobre também a entrega própria em Londrina (frete grátis, hardcoded, nunca passa por transportadora): o cliente confirma o recebimento com um clique em Minha Conta.
+
+Rode `supabase/shipping_tracking.sql` no SQL Editor do Supabase. Ele adiciona:
+- Colunas em `orders`: `shipping_service_id` (serviço escolhido no SuperFrete — 1=PAC, 2=SEDEX, 17=Mini Envios, 3=Jadlog, 31=Loggi, 33=J&T; nulo = entrega própria), `recipient_document` (CPF, exigido pelo SuperFrete pra gerar etiqueta), `superfrete_label_id`, `tracking_code`, `label_print_url` — com uma `CHECK` travando `shipping_service_id` nos 6 códigos válidos (ou nulo), pra um valor adulterado no navegador nunca virar um serviço inexistente.
+- `admin_salvar_etiqueta` e `admin_get_order_envio`: só admin compra/lê os dados de envio de um pedido.
+- `confirmar_recebimento`: o próprio cliente marca o pedido como entregue (só funciona a partir de `enviado`, e só no próprio pedido) — cobre Londrina e serve de reforço se o webhook atrasar.
+- Atualiza `admin_all_orders()` pra também trazer os campos de rastreio.
+
+**Pra ativar:**
+1. Rode `supabase/shipping_tracking.sql`.
+2. Publique as duas functions: `supabase functions deploy comprar-etiqueta` e `supabase functions deploy superfrete-webhook`.
+3. Nos **Secrets** das Edge Functions, além dos que já existem pro cálculo de frete (`SUPERFRETE_TOKEN`, `ORIGEM_CEP`, `CONTATO_EMAIL`), adicione os dados completos de quem envia (exigidos pelo SuperFrete pra gerar etiqueta, não só cotar) e o segredo do webhook:
+   ```bash
+   supabase secrets set ORIGEM_NOME="Seu Nome ou Razão Social"
+   supabase secrets set ORIGEM_RUA="Rua Exemplo"
+   supabase secrets set ORIGEM_NUMERO="123"
+   supabase secrets set ORIGEM_BAIRRO="Bairro"
+   supabase secrets set ORIGEM_CIDADE="Londrina"
+   supabase secrets set ORIGEM_UF="PR"
+   supabase secrets set ORIGEM_DOCUMENTO="000.000.000-00"
+   supabase secrets set SUPERFRETE_WEBHOOK_SECRET="invente-uma-senha-longa-aleatoria-aqui"
+   ```
+4. **Passo manual, só dá pra fazer no painel do SuperFrete** (não tem API pra isso): em **Integrações > Webhooks**, cadastre a URL `https://<seu-projeto>.supabase.co/functions/v1/superfrete-webhook`, selecione os eventos `order.posted` e `order.delivered`, e defina um **secret_token** — use exatamente o mesmo valor do `SUPERFRETE_WEBHOOK_SECRET` do passo 3, senão o webhook chega e é rejeitado por assinatura inválida.
+
+**Segurança:** o preço do frete que o cliente vê no checkout vem do navegador dele — antes de gastar saldo de verdade comprando a etiqueta, `comprar-etiqueta` recota o frete no servidor pro mesmo serviço e CEP, e recusa a compra se o preço real for bem mais alto do que o que foi cobrado (sinal de que o `shipping_service_id` foi adulterado pra um serviço mais caro do que o exibido). O `superfrete-webhook` confere a assinatura HMAC-SHA256 (`X-ME-Signature`) de toda chamada antes de confiar nela, já que é uma URL pública.
+
+No `admin.html`, pedidos `pago` com endereço (não-Londrina) ganham o botão **"Comprar etiqueta de envio"** em "Pedidos e envio"; depois de comprada, o rastreio e o link de impressão aparecem ali. Em **Minha Conta**, pedidos `enviado` ganham o botão **"Recebi meu pedido"**, que o cliente usa pra confirmar o recebimento manualmente (necessário pra Londrina; opcional, como reforço, pros demais).
+
 ## Avaliação do pedido (estrelas)
 
 Rode `supabase/order_reviews.sql` no SQL Editor do Supabase. Ele adiciona:

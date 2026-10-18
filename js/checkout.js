@@ -132,7 +132,7 @@
   const totalEl = document.getElementById('orderSummaryTotal');
   let payMethod = 'cartao';
   const PIX_DISCOUNT = 0.05;
-  let frete = null; // { transportadora, servico, preco, dias }
+  let frete = null; // { id, transportadora, servico, preco, dias }
 
   function currentTotal() {
     const base = payMethod === 'pix' ? subtotal * (1 - PIX_DISCOUNT) : subtotal;
@@ -205,11 +205,19 @@
     );
   });
 
+  // ---- CPF: exigido pelo SuperFrete pra gerar etiqueta de envio ----
+  const cpfInput = document.getElementById('ckCpf');
+  cpfInput?.addEventListener('input', () => {
+    const digitos = cpfInput.value.replace(/\D/g, '');
+    cpfInput.setCustomValidity(digitos.length === 11 ? '' : 'Digite um CPF válido, com 11 números.');
+  });
+
   const calcFreteBtn = document.getElementById('calcFreteBtn');
   const freteOpcoesEl = document.getElementById('freteOpcoes');
 
   // entrega feita por vocês mesmos, sem transportadora — só aparece pra quem mora em Londrina
-  const ENTREGA_LOCAL = { transportadora: 'Entrega própria', servico: 'Entrega local em Londrina', preco: 0, dias: 1 };
+  // (sem id: não existe serviço real do SuperFrete por trás, não dá pra comprar etiqueta disso)
+  const ENTREGA_LOCAL = { id: null, transportadora: 'Entrega própria', servico: 'Entrega local em Londrina', preco: 0, dias: 1 };
   function ehLondrina(cidade) {
     return cidade.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim() === 'londrina';
   }
@@ -253,7 +261,7 @@
 
     function selecionarFrete(i) {
       const op = opcoes[i];
-      frete = { transportadora: op.transportadora, servico: op.servico, preco: op.preco, dias: op.dias };
+      frete = { id: op.id ?? null, transportadora: op.transportadora, servico: op.servico, preco: op.preco, dias: op.dias };
       renderTotal();
     }
     freteOpcoesEl.querySelectorAll('input[name="freteOpcao"]').forEach(input => {
@@ -319,10 +327,12 @@
         paymentMethod: payMethod,
         shippingCarrier: frete.transportadora,
         shippingService: frete.servico,
+        shippingServiceId: frete.id,
         shippingPrice: frete.preco,
         shippingDays: frete.dias,
         recipientName: document.getElementById('ckName').value,
         recipientPhone: document.getElementById('ckPhone').value,
+        recipientDocument: document.getElementById('ckCpf').value.replace(/\D/g, ''),
         cep: document.getElementById('ckCep').value,
         street: document.getElementById('ckStreet').value,
         number: document.getElementById('ckNumber').value,

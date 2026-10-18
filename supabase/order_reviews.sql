@@ -27,7 +27,12 @@ begin
   if dono is null then
     raise exception 'Pedido não encontrado.';
   end if;
-  if dono != auth.uid() then
+  -- "is distinct from" (não "!="): com != , uma chamada sem login (auth.uid()
+  -- nulo) faz a comparação virar NULL em vez de true, e o "if" simplesmente
+  -- não dispara — ou seja, "!=" sozinho deixava qualquer um, sem estar
+  -- logado, avaliar pedido de outra pessoa. "is distinct from" trata NULL
+  -- como diferente de qualquer coisa, então nunca passa batido.
+  if auth.uid() is null or dono is distinct from auth.uid() then
     raise exception 'Você só pode avaliar seus próprios pedidos.';
   end if;
   if status_atual != 'entregue' then

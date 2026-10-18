@@ -62,7 +62,9 @@
           <span class="step-label">${step.label}</span>
         </div>`;
       }).join('')}
-    </div>`;
+    </div>
+    ${o.tracking_code ? `<p style="font-size:.8rem; color:var(--text-faint); margin-top:8px;">Rastreio: ${o.tracking_code}</p>` : ''}
+    ${o.status === 'enviado' ? `<button type="button" class="btn btn-sm btn-ghost confirmar-recebimento-btn" data-order-id="${o.id}" style="margin-top:8px;">Recebi meu pedido</button>` : ''}`;
   }
 
   function estrelasHtml(o) {
@@ -176,6 +178,20 @@
           return;
         }
         renderOrders(); // recarrega pra já mostrar a avaliação salva
+      });
+    });
+
+    ordersBox.querySelectorAll('.confirmar-recebimento-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Confirma que esse pedido já chegou na sua casa?')) return;
+        btn.disabled = true;
+        const result = await window.emAuth.confirmarRecebimento(btn.dataset.orderId);
+        if (result.error) {
+          alert('Não deu pra confirmar: ' + result.error);
+          btn.disabled = false;
+          return;
+        }
+        renderOrders(); // recarrega pra já mostrar "Entregue"
       });
     });
   }

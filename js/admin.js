@@ -184,6 +184,21 @@
 
   const STATUS_LABEL = { pendente: 'Pendente', pago: 'Pago', enviado: 'Enviado', entregue: 'Entregue', cancelado: 'Cancelado' };
 
+  // etiqueta de envio: botão de compra (só pra pedido pago, com frete de
+  // transportadora de verdade) ou o rastreio já comprado
+  function etiquetaHtml(o) {
+    if (o.tracking_code) {
+      return `<p style="font-size:.82rem; margin-top:10px;">Rastreio: <b>${o.tracking_code}</b>${o.label_print_url ? ` · <a href="${o.label_print_url}" target="_blank" rel="noopener" style="color:var(--accent);">Imprimir etiqueta</a>` : ''}</p>`;
+    }
+    if (o.status === 'pago' && o.shipping_service_id) {
+      return `<button type="button" class="btn btn-sm btn-accent comprar-etiqueta-btn" data-order-id="${o.id}" style="margin-top:10px;">Comprar etiqueta de envio</button>`;
+    }
+    if (o.status === 'pago' && !o.shipping_service_id) {
+      return `<p style="font-size:.78rem; color:var(--text-faint); margin-top:10px;">Entrega própria: sem etiqueta de transportadora pra comprar aqui.</p>`;
+    }
+    return '';
+  }
+
   // lista completa de pedidos pra acompanhar envio — não respeita o filtro de período de cima
   // de propósito, porque um pedido pendente de semanas atrás ainda precisa aparecer aqui.
   function renderFulfillment() {
@@ -214,6 +229,7 @@
           Envio: ${o.shipping_carrier || '—'}${o.shipping_service ? ' · ' + o.shipping_service : ''}${o.shipping_price != null ? ' · ' + (o.shipping_price > 0 ? fmt(o.shipping_price) : 'Grátis') : ''}
           ${o.rating ? `<br>Avaliação: <span class="order-rating" style="display:inline-flex;">${[1, 2, 3, 4, 5].map(n => `<span class="star${n <= o.rating ? ' filled' : ''}">★</span>`).join('')}</span>` : ''}
         </div>
+        ${etiquetaHtml(o)}
       </div>
     `).join('');
 
@@ -232,6 +248,28 @@
         const pedido = allOrders.find(o => o.id === orderId);
         if (pedido) pedido.status = novoStatus;
         sel.className = `status-select status-${novoStatus}`;
+      });
+    });
+
+    box.querySelectorAll('.comprar-etiqueta-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const orderId = btn.dataset.orderId;
+        if (!confirm('Isso compra a etiqueta de verdade e gasta saldo da sua carteira SuperFrete. Confirma?')) return;
+        btn.disabled = true;
+        btn.textContent = 'Comprando...';
+        const result = await window.emAuth.comprarEtiqueta(orderId);
+        if (result.error) {
+          alert('Não deu pra comprar a etiqueta: ' + result.error);
+          btn.disabled = false;
+          btn.textContent = 'Comprar etiqueta de envio';
+          return;
+        }
+        const pedido = allOrders.find(o => o.id === orderId);
+        if (pedido) {
+          pedido.tracking_code = result.trackingCode;
+          pedido.label_print_url = result.labelPrintUrl;
+        }
+        renderFulfillment();
       });
     });
   }
