@@ -2,56 +2,54 @@
    ÉBANO & MARFIM — sistema de tokens
    ========================================================= */
 :root{
-  /* --- paleta: tema Marfim (claro), padrão --- */
-  --bg:        #F1E8D3;
-  --bg-soft:   #E8DCBE;
-  --surface:   #FBF6EA;
-  --surface-2: #EFE3C6;
-  --text:      #241C15;
-  --text-dim:  #5B4E3D;
-  --text-faint:#796A52;
-  --accent:    #855520;
-  --accent-2:  #7C4A2A;
-  --accent-soft: rgba(176,121,59,0.14);
-  --line:      rgba(36,28,21,0.14);
-  --line-strong: rgba(36,28,21,0.28);
-  --shadow:    0 18px 40px -20px rgba(36,28,21,0.35);
+  /* --- paleta: "o quarto escuro" — grafite + laranja, padrão do site --- */
+  --bg:        #18191B;
+  --bg-soft:   #1E2022;
+  --surface:   #222427;
+  --surface-2: #2B2D31;
+  --text:      #EFF0F1;
+  --text-dim:  #B9BBC0;
+  --text-faint:#9C9EA3;
+  --accent:    #FF4A1F;
+  --accent-2:  #D63D16;
+  --accent-soft: rgba(255,74,31,0.16);
+  --line:      rgba(239,240,241,0.12);
+  --line-strong: rgba(239,240,241,0.24);
+  --shadow:    0 24px 50px -20px rgba(0,0,0,0.65);
 
-  /* tinta de contraste usada pelo alternador de linha (ébano escuro sobre marfim) */
-  --ink-contrast: #14100D;
+  /* tinta usada sobre o laranja (botões sólidos) */
+  --ink-contrast: #18191B;
 
-  /* verde de progresso — só usado na esteira de passos do checkout, sinaliza "concluído" */
-  --success: #3F8F5F;
-  --success-soft: rgba(63,143,95,0.18);
+  --success: #5FBF85;
+  --success-soft: rgba(95,191,133,0.2);
 
-  --font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', serif;
+  --font-display: 'Bodoni Moda', 'Iowan Old Style', 'Palatino Linotype', serif;
   --font-body: 'Jost', 'Segoe UI', system-ui, sans-serif;
 
   --maxw: 1180px;
   --radius: 2px;
 }
 
-/* Marfim (claro) é o padrão do site pra todo mundo — o tema escuro só
-   entra se a pessoa escolher manualmente no alternador (sem seguir
-   o tema do sistema, que estava deixando gente que prefere claro
-   caindo no escuro sem pedir). */
+/* "O quarto escuro" é a identidade do site — não é um switch de tema,
+   é a sala em que a perfumaria mora. O alternador Ébano/Marfim continua
+   existindo pra quem prefere claro, mas o escuro é o estado implícito. */
 
 /* --- alternância manual (persistida) --- */
 :root[data-theme="dark"]{
-  --bg:        #0C0A07;
-  --bg-soft:   #171310;
-  --surface:   #1D1811;
-  --surface-2: #2C2317;
-  --text:      #EFE7D6;
-  --text-dim:  #B8AA92;
-  --text-faint:#8C7E67;
-  --accent:    #D3A155;
-  --accent-2:  #EFC57E;
-  --accent-soft: rgba(211,161,85,0.16);
-  --line:      rgba(239,231,214,0.14);
-  --line-strong: rgba(239,231,214,0.28);
-  --shadow:    0 18px 44px -18px rgba(0,0,0,0.7);
-  --ink-contrast: #F1E8D3;
+  --bg:        #18191B;
+  --bg-soft:   #1E2022;
+  --surface:   #222427;
+  --surface-2: #2B2D31;
+  --text:      #EFF0F1;
+  --text-dim:  #B9BBC0;
+  --text-faint:#9C9EA3;
+  --accent:    #FF4A1F;
+  --accent-2:  #D63D16;
+  --accent-soft: rgba(255,74,31,0.16);
+  --line:      rgba(239,240,241,0.12);
+  --line-strong: rgba(239,240,241,0.24);
+  --shadow:    0 24px 50px -20px rgba(0,0,0,0.65);
+  --ink-contrast: #18191B;
   --success: #5FBF85;
   --success-soft: rgba(95,191,133,0.2);
 }
@@ -85,7 +83,14 @@ html{ scroll-behavior:smooth; }
 body{
   margin:0;
   padding:0 20px;
-  background:radial-gradient(120% 70% at 50% -8%, var(--bg-soft) 0%, var(--bg) 55%) fixed;
+  /* o quarto escuro: ambiente de vitrine, luz quente baixa vinda de poucos pontos,
+     nunca um acento ligado ao laranja de ação — isso fica só nos botões */
+  background:
+    radial-gradient(640px 520px at 10% 6%, rgba(255,255,255,.035), transparent 62%),
+    radial-gradient(520px 460px at 92% 16%, rgba(255,255,255,.025), transparent 65%),
+    radial-gradient(480px 420px at 50% 100%, rgba(255,255,255,.02), transparent 60%),
+    radial-gradient(120% 70% at 50% -8%, var(--bg-soft) 0%, var(--bg) 55%);
+  background-attachment:fixed;
   color:var(--text);
   font-family:var(--font-body);
   font-size:16px;
@@ -94,16 +99,9 @@ body{
   transition:background .5s ease, color .5s ease;
   overflow-x:hidden;
 }
-/* tema Ébano: mármore preto com veios e brilho dourado, tipo joalheria */
-:root[data-theme="dark"] body{
-  background:
-    radial-gradient(640px 520px at 10% 6%, rgba(211,161,85,.11), transparent 62%),
-    radial-gradient(520px 460px at 92% 16%, rgba(211,161,85,.08), transparent 65%),
-    radial-gradient(480px 420px at 50% 100%, rgba(211,161,85,.06), transparent 60%),
-    linear-gradient(112deg, transparent 44%, rgba(211,161,85,.05) 48%, transparent 52%),
-    linear-gradient(68deg, transparent 28%, rgba(255,255,255,.025) 30%, transparent 32%),
-    radial-gradient(120% 70% at 50% -8%, var(--bg-soft) 0%, var(--bg) 55%);
-  background-attachment:fixed;
+/* tema Marfim: volta pro claro liso, sem o ambiente de vitrine */
+:root[data-theme="light"] body{
+  background:radial-gradient(120% 70% at 50% -8%, var(--bg-soft) 0%, var(--bg) 55%) fixed;
 }
 
 /* moldura fina dourada dupla — reservada aos painéis de destaque */
@@ -122,7 +120,9 @@ img{ max-width:100%; }
 
 h1,h2,h3,h4{
   font-family:var(--font-display);
-  font-weight:600;
+  font-weight:500;
+  letter-spacing:-.02em;
+  line-height:1.08;
   margin:0;
   text-wrap:balance;
   color:var(--text);
