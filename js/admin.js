@@ -11,14 +11,14 @@
 
   function renderRankList(el, rows, labelKey, valueLabel) {
     if (!rows.length) {
-      el.innerHTML = '<p style="color:var(--text-faint);">Nada nesse período.</p>';
+      el.innerHTML = '<p style="color:var(--text-faint);">Indisponível: nada registrado nesse período.</p>';
       return;
     }
     const max = rows[0].count;
     el.innerHTML = rows.slice(0, 8).map(r => `
       <div class="rank-row">
         <span>${r[labelKey]}</span>
-        <div class="quiz-bar"><i style="width:${Math.max(6, Math.round(100 * r.count / max))}%"></i></div>
+        <div class="chart-bar"><i style="width:${Math.max(6, Math.round(100 * r.count / max))}%"></i></div>
         <span>${r.count} ${valueLabel}</span>
       </div>
     `).join('');
@@ -66,9 +66,11 @@
     document.getElementById('statViewsTotal').textContent = new Set(views.map(e => e.session_id)).size;
     document.getElementById('statVisitorsUnique').textContent = views.length;
     const avaliados = orders.filter(o => o.rating);
-    document.getElementById('statRating').textContent = avaliados.length
+    const statRatingEl = document.getElementById('statRating');
+    statRatingEl.classList.toggle('is-empty', !avaliados.length);
+    statRatingEl.textContent = avaliados.length
       ? (avaliados.reduce((s, o) => s + o.rating, 0) / avaliados.length).toFixed(1) + ' ★ (' + avaliados.length + ')'
-      : '—';
+      : 'Indisponível';
     document.getElementById('lastUpdated').textContent = '· atualizado agora, ' + new Date().toLocaleTimeString('pt-BR');
 
     // ---- pedidos confirmados recentes (dentro do período) ----
@@ -116,7 +118,7 @@
       topCustomersBox.innerHTML = customers.slice(0, 8).map(c => `
         <div class="rank-row">
           <span>${c.email}</span>
-          <div class="quiz-bar"><i style="width:${Math.max(6, Math.round(100 * c.total_spent / maxSpent))}%"></i></div>
+          <div class="chart-bar"><i style="width:${Math.max(6, Math.round(100 * c.total_spent / maxSpent))}%"></i></div>
           <span>${fmt(c.total_spent)} · ${c.order_count}x</span>
         </div>
       `).join('');
@@ -133,18 +135,26 @@
     ];
     const uniqueSessionsFor = type => new Set(events.filter(e => e.event_type === type).map(e => e.session_id)).size;
     const counts = stages.map(([type]) => uniqueSessionsFor(type));
-    const maxCount = Math.max(1, ...counts);
-    document.getElementById('funnelList').innerHTML = stages.map(([, label], i) => {
-      // conversão em relação à etapa anterior — mostra onde a maior parte desiste
-      const conversao = i === 0 || !counts[i - 1] ? null : Math.round(100 * counts[i] / counts[i - 1]);
-      return `
-      <div class="funnel-row">
-        <span>${label}</span>
-        <div class="quiz-bar" style="flex:1; margin:0 14px;"><i style="width:${Math.max(4, Math.round(100 * counts[i] / maxCount))}%"></i></div>
-        <span>${counts[i]}${conversao !== null ? ` <span style="color:var(--text-faint);">(${conversao}%)</span>` : ''}</span>
-      </div>
-    `;
-    }).join('');
+    const totalVisitantes = counts[0]; // "visitou o site" é sempre o topo do funil
+
+    if (!totalVisitantes) {
+      document.getElementById('funnelList').innerHTML = '<p style="color:var(--text-faint);">Indisponível: nenhuma visita registrada nesse período.</p>';
+    } else {
+      // % sempre em relação ao topo do funil (visitantes totais), nunca à etapa
+      // anterior — as etapas do meio não são estritamente sequenciais (dá pra
+      // abrir um perfume sem ter buscado antes), então "conversão da etapa
+      // anterior" podia passar de 100% e não fazer sentido nenhum.
+      document.getElementById('funnelList').innerHTML = stages.map(([, label], i) => {
+        const pct = Math.round(100 * counts[i] / totalVisitantes);
+        return `
+        <div class="funnel-row">
+          <span>${label}</span>
+          <div class="chart-bar" style="flex:1; margin:0 14px;"><i style="width:${Math.max(counts[i] ? 2 : 0, pct)}%"></i></div>
+          <span>${counts[i]} <span class="funnel-pct">(${pct}%)</span></span>
+        </div>
+      `;
+      }).join('');
+    }
   }
 
   function wireFilters() {

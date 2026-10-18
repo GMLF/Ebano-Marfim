@@ -120,7 +120,7 @@ img{ max-width:100%; }
 
 h1,h2,h3,h4{
   font-family:var(--font-display);
-  font-weight:500;
+  font-weight:600;
   letter-spacing:-.02em;
   line-height:1.08;
   margin:0;
@@ -1392,30 +1392,39 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
    ========================================================= */
 .stat-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
   gap:14px;
   margin-bottom:32px;
 }
 .stat-card{
   background:var(--surface); border:1px solid var(--line); border-radius:8px;
-  padding:18px 20px;
+  padding:20px 22px;
 }
-.stat-card .stat-value{ font-family:var(--font-display); font-size:1.6rem; color:var(--text); }
-.stat-card .stat-label{ font-size:.82rem; text-transform:uppercase; letter-spacing:.07em; color:var(--text-faint); margin-top:6px; }
+/* valor do KPI: fonte sans (nunca serifada aqui — um número grande numa
+   didone de alto contraste lê fraco/decorativo, não como dado forte) */
+.stat-card .stat-value{ font-family:var(--font-body); font-weight:600; font-size:2.1rem; line-height:1.1; color:var(--text); font-variant-numeric:proportional-nums; }
+.stat-card .stat-value.is-empty{ font-size:1.1rem; font-weight:500; color:var(--text-faint); }
+.stat-card .stat-label{ font-size:.78rem; text-transform:uppercase; letter-spacing:.07em; color:var(--text-faint); margin-top:8px; }
 
-.rank-list{ display:flex; flex-direction:column; gap:12px; }
+.rank-list{ display:flex; flex-direction:column; gap:14px; }
 .rank-row{ display:grid; grid-template-columns:minmax(70px,1fr) minmax(60px,1.4fr) auto; gap:12px; align-items:center; font-size:.85rem; }
 .rank-row span:first-child{ color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.rank-row span:last-child{ color:var(--text-faint); font-size:.82rem; white-space:nowrap; }
+.rank-row span:last-child{ color:var(--text-faint); font-size:.78rem; white-space:nowrap; font-variant-numeric:tabular-nums; }
 
-.funnel-list{ display:flex; flex-direction:column; gap:10px; }
+.funnel-list{ display:flex; flex-direction:column; gap:14px; }
 .funnel-row{
   display:flex; align-items:center;
-  padding:10px 4px;
+  padding:4px;
   font-size:.85rem;
 }
 .funnel-row span:first-child{ flex:0 0 150px; color:var(--text-dim); }
-.funnel-row span:last-child{ font-family:var(--font-display); color:var(--text); min-width:2ch; text-align:right; }
+.funnel-row span:last-child{ font-family:var(--font-body); font-weight:500; color:var(--text); min-width:6ch; text-align:right; font-variant-numeric:tabular-nums; }
+.funnel-row .funnel-pct{ color:var(--text-faint); font-weight:400; }
+
+/* barras de gráfico (funil, ranking) — mais grossas que a barrinha de
+   progresso do quiz, ponta arredondada, nasce sempre da mesma linha de base */
+.chart-bar{ height:10px; border-radius:5px; background:var(--line); overflow:hidden; }
+.chart-bar i{ display:block; height:100%; background:var(--accent); border-radius:5px; transition:width .5s ease; }
 
 .fulfill-row{ border:1px solid var(--line); border-radius:6px; padding:16px; margin-bottom:12px; }
 .fulfill-row-head{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px; }

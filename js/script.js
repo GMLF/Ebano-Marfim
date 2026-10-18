@@ -374,7 +374,7 @@
       window.emAuth.getProductReviews(p.id).then(reviews => {
         if (!modal.classList.contains('open') || !reviewsBox.isConnected) return; // produto trocou enquanto buscava
         if (!reviews.length) {
-          reviewsBox.innerHTML = '<p class="modal-bottle-size">Ainda sem avaliações — seja a primeira pessoa a comprar e avaliar.</p>';
+          reviewsBox.innerHTML = '<p class="modal-bottle-size">Ainda sem avaliações. Seja a primeira pessoa a comprar e avaliar.</p>';
           return;
         }
         const media = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;

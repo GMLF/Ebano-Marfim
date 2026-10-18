@@ -236,7 +236,7 @@
     calcFreteBtn.textContent = 'Recalcular frete';
 
     if (!opcoes.length) {
-      freteOpcoesEl.innerHTML = '<p style="color:var(--text-faint);">Nenhuma opção de frete encontrada pra esse CEP ainda — o cálculo por transportadora está sendo configurado.</p>';
+      freteOpcoesEl.innerHTML = '<p style="color:var(--text-faint);">Nenhuma opção de frete encontrada pra esse CEP ainda. O cálculo por transportadora está sendo configurado.</p>';
       return;
     }
 
