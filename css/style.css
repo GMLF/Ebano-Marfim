@@ -10,7 +10,7 @@
   --text:      #241C15;
   --text-dim:  #5B4E3D;
   --text-faint:#796A52;
-  --accent:    #B0793B;
+  --accent:    #855520;
   --accent-2:  #7C4A2A;
   --accent-soft: rgba(176,121,59,0.14);
   --line:      rgba(36,28,21,0.14);
@@ -63,7 +63,7 @@
   --text:      #241C15;
   --text-dim:  #5B4E3D;
   --text-faint:#796A52;
-  --accent:    #B0793B;
+  --accent:    #855520;
   --accent-2:  #7C4A2A;
   --accent-soft: rgba(176,121,59,0.14);
   --line:      rgba(36,28,21,0.14);
@@ -456,8 +456,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 .hero-eyebrow::before{ content:""; width:22px; height:1px; background:var(--accent); }
 .hero-copy h1{
-  font-size:clamp(2.3rem,4.6vw,3.6rem);
-  line-height:1.06;
+  font-size:clamp(2.5rem,5.4vw,4.3rem);
+  line-height:1.04;
 }
 .hero-copy h1 em{ font-style:italic; color:var(--accent); font-weight:500; }
 .hero-copy p{ max-width:42ch; font-size:1.02rem; }
@@ -476,7 +476,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 /* vitrine — colagem de frascos reais com parallax/tilt */
 .hero-vitrine{
   position:relative;
-  height:440px;
+  height:500px;
   perspective:1200px;
 }
 .vitrine-tile{
@@ -509,10 +509,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 .vitrine-tile .plate b{ display:block; font-family:var(--font-display); font-style:italic; font-size:.82rem; letter-spacing:0; color:var(--text); }
 
-.vb-bidaya{ width:172px; top:2%; left:4%; z-index:3; animation-delay:0s; }
-.vb-milk{ width:118px; top:0%; left:52%; z-index:2; animation-delay:1.4s; }
-.vb-cafe{ width:118px; top:56%; left:6%; z-index:1; animation-delay:2.6s; }
-.vb-pink{ width:126px; top:44%; left:58%; z-index:4; animation-delay:.7s; }
+.vb-bidaya{ width:216px; top:0%; left:2%; z-index:3; animation-delay:0s; }
+.vb-milk{ width:128px; top:2%; left:58%; z-index:2; animation-delay:1.4s; }
+.vb-cafe{ width:128px; top:62%; left:4%; z-index:1; animation-delay:2.6s; }
+.vb-pink{ width:138px; top:46%; left:62%; z-index:4; animation-delay:.7s; }
 
 @keyframes vitrineFloat{
   0%, 100%{ translate:0 0; }
@@ -830,6 +830,26 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 /* =========================================================
    ateliê / processo
    ========================================================= */
+.atelie-layout{
+  display:grid;
+  grid-template-columns:.8fr 1.2fr;
+  gap:clamp(32px,6vw,80px);
+  align-items:start;
+}
+.atelie-visual{
+  position:sticky;
+  top:100px;
+  aspect-ratio:4/5;
+  border-radius:6px;
+  overflow:hidden;
+  background:radial-gradient(130% 100% at 50% 8%, #EEEEEC 0%, #D8D8D5 78%);
+  border:1px solid var(--line);
+}
+.atelie-visual img{ width:100%; height:100%; object-fit:cover; display:block; }
+@media (max-width:900px){
+  .atelie-layout{ grid-template-columns:1fr; }
+  .atelie-visual{ position:static; aspect-ratio:16/10; }
+}
 .process-list{
   display:flex;
   flex-direction:column;

@@ -25,3 +25,6 @@ __pycache__/
 
 # overrides locais do Claude Code (permissões etc.) — não deve ir pro repo
 .claude/settings.local.json
+
+# screenshots/relatórios de inspeção da skill de design — gerados a cada rodada, não versionar
+.taste-skill/
