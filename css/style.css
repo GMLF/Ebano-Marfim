@@ -1390,6 +1390,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 /* =========================================================
    dashboard admin
    ========================================================= */
+/* zonas do dashboard (Comportamento / Vendas / Operação) — título
+   próprio por zona em vez de uma sopa só de cards soltos */
+.dashboard-section{ margin:40px 0 16px; }
+.dashboard-section:first-of-type{ margin-top:32px; }
+.dashboard-section-title{ font-size:1.3rem; margin-top:8px; }
+.dashboard-grid-2{ grid-template-columns:1fr 1fr; margin-top:16px; }
+@media (max-width:860px){ .dashboard-grid-2{ grid-template-columns:1fr; } }
+.checkout-grid + .checkout-card{ margin-top:16px; }
+.checkout-card + .dashboard-section{ margin-top:40px; }
+
 .stat-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
