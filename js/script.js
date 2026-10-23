@@ -16,6 +16,9 @@
   let refreshCollectionGrid = null; // setado dentro do bloco da página coleção; chamado de novo quando os preços dinâmicos chegam
 
   const fmt = n => 'R$ ' + n.toLocaleString('pt-BR');
+  // tudo que vem do banco escrito por cliente (nome e comentário de avaliação) passa por aqui
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const linkProduto = id => 'produto?id=' + encodeURIComponent(id);
   function priceOf(p) {
     return p.fullPrice;
   }
@@ -182,7 +185,7 @@
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     destaquesGrid.innerHTML = shuffled.slice(0, 3).map(p => `
-      <a class="product-card" href="colecao#p-${p.id}" style="text-decoration:none;">
+      <a class="product-card" href="${linkProduto(p.id)}">
         <div class="product-visual${p.artBg ? ' full-art' : ''}">
           <span class="brand-tag">${p.brand}</span>
           <img class="product-photo" src="${p.img}" alt="${p.name}, ${p.brand}">
@@ -233,7 +236,7 @@
     if (existing) existing.qty += 1;
     else cart.push({ id: p.id, name: p.name, img: p.img, ml: p.fullSize, price, qty: 1 });
     saveCart(cart);
-    showToast(`${p.name} adicionado à seleção`);
+    openCart(); // mostra que entrou e já deixa o "Finalizar" à mão
     if (window.emAuth) window.emAuth.logEvent('add_to_cart', { product_id: p.id, name: p.name });
   }
   function changeQty(id, delta) {
@@ -301,23 +304,21 @@
      ========================================================= */
   const overlay = document.getElementById('overlay');
   const drawer = document.getElementById('cartDrawer');
-  const modal = document.getElementById('quickViewModal');
 
   function closeAllPanels() {
     if (overlay) overlay.classList.remove('open');
     if (drawer) drawer.classList.remove('open');
-    if (modal) modal.classList.remove('open');
+  }
+  function openCart() {
+    if (!overlay || !drawer) return;
+    overlay.classList.add('open');
+    drawer.classList.add('open');
   }
   if (overlay) overlay.addEventListener('click', closeAllPanels);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllPanels(); });
 
   const cartBtn = document.getElementById('cartBtn');
-  if (cartBtn && drawer && overlay) {
-    cartBtn.addEventListener('click', () => {
-      overlay.classList.add('open');
-      drawer.classList.add('open');
-    });
-  }
+  if (cartBtn) cartBtn.addEventListener('click', openCart);
   const drawerClose = document.getElementById('drawerClose');
   if (drawerClose) drawerClose.addEventListener('click', closeAllPanels);
   const checkoutBtn = document.getElementById('checkoutBtn');
@@ -329,14 +330,16 @@
   }
 
   /* =========================================================
-     quick view modal — só existe em colecao.html
+     página do produto (produto.html?id=...)
      ========================================================= */
-  const modalBody = document.getElementById('modalBody');
-  async function openQuickView(id) {
+  const estrelas = nota => [1, 2, 3, 4, 5].map(n => `<span class="star${n <= Math.round(nota) ? ' filled' : ''}" aria-hidden="true">★</span>`).join('');
+  const contaAvaliacoes = n => `${n} ${n === 1 ? 'avaliação' : 'avaliações'}`;
+  let refreshProductPage = null; // chamado de novo quando os preços dinâmicos chegam
+
+  async function carregarProduto(id) {
     let p = findProduct(id);
     if (!p && window.emAuth && window.emAuth.isConfigured) {
-      // produto do catálogo importado que ainda não passou pela Coleção nesta
-      // sessão (ex.: veio direto de um link do Quiz) — busca avulsa por id
+      // produto do catálogo importado: não está em data/products.js, busca avulsa por id
       const row = await window.emAuth.getCatalogProduct(id);
       if (row) {
         const precos = await window.emAuth.getPricesFor([id]);
@@ -344,65 +347,125 @@
         catalogCache.set(p.id, p);
       }
     }
-    if (!p || !modalBody || !modal || !overlay) return;
-    if (window.emAuth) window.emAuth.logEvent('product_view', { product_id: p.id, name: p.name });
-    modalBody.innerHTML = `
-      <div class="modal-visual${p.artBg ? ' full-art' : ''}"><img src="${p.img}" alt="${p.name}, ${p.brand}">${p.artBg ? '' : '<span class="modal-shine" aria-hidden="true"></span>'}</div>
-      <div class="modal-info">
-        <span class="p-eyebrow">${p.brand} · ${p.family}</span>
-        <h3>${p.name}</h3>
-        <div class="pyramid">
-          <div class="pyramid-row"><b>Topo</b><span>${p.top || '—'}</span></div>
-          <div class="pyramid-row"><b>Coração</b><span>${p.heart || '—'}</span></div>
-          <div class="pyramid-row"><b>Fundo</b><span>${p.base || '—'}</span></div>
-        </div>
-        <p class="modal-bottle-size">Frasco fechado · ${p.fullSize}ml, lacrado de fábrica</p>
-        <div class="modal-foot">
-          <span class="product-price" id="modalPrice">${fmt(p.fullPrice)}</span>
-          <button class="btn btn-solid" id="modalAddBtn" ${p.inStock === false ? 'disabled' : ''}>${p.inStock === false ? 'Esgotado' : 'Adicionar à seleção'}</button>
-        </div>
-        <div id="modalReviews"></div>
-      </div>
-    `;
-    modalBody.querySelector('#modalAddBtn').addEventListener('click', () => addToCart(p.id));
-
-    overlay.classList.add('open');
-    modal.classList.add('open');
-
-    if (window.emAuth && window.emAuth.isConfigured) {
-      const reviewsBox = modalBody.querySelector('#modalReviews');
-      window.emAuth.getProductReviews(p.id).then(reviews => {
-        if (!modal.classList.contains('open') || !reviewsBox.isConnected) return; // produto trocou enquanto buscava
-        if (!reviews.length) {
-          reviewsBox.innerHTML = '<p class="modal-bottle-size">Ainda sem avaliações. Seja a primeira pessoa a comprar e avaliar.</p>';
-          return;
-        }
-        const media = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
-        reviewsBox.innerHTML = `
-          <div class="review-summary">
-            ${[1, 2, 3, 4, 5].map(n => `<span class="star${n <= Math.round(media) ? ' filled' : ''}">★</span>`).join('')}
-            <span>${media.toFixed(1)} · ${reviews.length} avaliaç${reviews.length === 1 ? 'ão' : 'ões'}</span>
-          </div>
-          <div class="review-list">
-            ${reviews.map(r => `
-              <div class="review-item">
-                <div class="review-item-head">
-                  <span class="review-item-name">${r.reviewer_name}</span>
-                  <div class="order-rating" aria-label="${r.rating} de 5 estrelas">
-                    ${[1, 2, 3, 4, 5].map(n => `<span class="star${n <= r.rating ? ' filled' : ''}">★</span>`).join('')}
-                  </div>
-                </div>
-                <span class="review-item-date">${new Date(r.created_at).toLocaleDateString('pt-BR')}</span>
-                ${r.comment ? `<p>"${r.comment}"</p>` : ''}
-              </div>
-            `).join('')}
-          </div>
-        `;
-      });
-    }
+    return p;
   }
-  const modalClose = document.getElementById('modalClose');
-  if (modalClose) modalClose.addEventListener('click', closeAllPanels);
+
+  function relacionadoHtml(r) {
+    return `
+      <a class="product-card" href="${linkProduto(r.id)}">
+        <div class="product-visual${r.artBg ? ' full-art' : ''}">
+          <span class="brand-tag">${esc(r.brand)}</span>
+          <img class="product-photo" src="${esc(r.img)}" alt="${esc(r.name)}, ${esc(r.brand)}" loading="lazy">
+          ${r.artBg ? '' : '<span class="shine" aria-hidden="true"></span>'}
+        </div>
+        <div class="product-info">
+          <span class="p-eyebrow">${esc(r.family)}</span>
+          <h3>${esc(r.name)}</h3>
+          <div class="product-foot">
+            <span class="product-price">${fmt(r.fullPrice)} <small>· frasco ${r.fullSize}ml</small></span>
+          </div>
+        </div>
+      </a>`;
+  }
+
+  const pdDetail = document.getElementById('pdDetail');
+  if (pdDetail) {
+    const pdStatus = document.getElementById('pdStatus');
+    const produtoId = new URLSearchParams(location.search).get('id');
+
+    (async () => {
+      const p = produtoId ? await carregarProduto(produtoId) : null;
+      if (!p) {
+        pdStatus.innerHTML = 'Não encontramos esse perfume. <a href="colecao">Ver a coleção</a>.';
+        return;
+      }
+      document.title = `${p.name} | Ébano & Marfim`;
+      if (window.emAuth) window.emAuth.logEvent('product_view', { product_id: p.id, name: p.name });
+
+      let notaResumo = null; // { html, label }, preenchido quando as avaliações chegam
+      function aplicarNota() {
+        const link = document.getElementById('pdRating');
+        if (!link || !notaResumo) return;
+        link.innerHTML = notaResumo.html;
+        link.setAttribute('aria-label', notaResumo.label);
+        link.hidden = false;
+      }
+      function renderDetalhe() {
+        const esgotado = p.inStock === false;
+        pdDetail.innerHTML = `
+          <div class="pd-visual${p.artBg ? ' full-art' : ''}">
+            <img src="${esc(p.img)}" alt="${esc(p.name)}, ${esc(p.brand)}">
+          </div>
+          <div class="pd-info">
+            <p class="pd-brand">${esc(p.brand)} · ${esc(p.family)}</p>
+            <h1 class="pd-name">${esc(p.name)}</h1>
+            <a class="pd-rating" href="#avaliacoes" id="pdRating" hidden></a>
+            <p class="pd-price">${fmt(p.fullPrice)}<small>Frasco fechado de ${p.fullSize}ml, lacrado de fábrica</small></p>
+            <button class="btn btn-solid pd-add" id="pdAddBtn" type="button" ${esgotado ? 'disabled' : ''}>${esgotado ? 'Esgotado' : 'Adicionar à seleção'}</button>
+            <p class="pd-ship">Frete grátis na opção mais barata a partir de R$ 399 em perfumes. Em Londrina, a entrega é por nossa conta.</p>
+            <div class="pd-pyramid">
+              <h2>Pirâmide olfativa</h2>
+              <div class="pyramid">
+                <div class="pyramid-row"><b>Topo</b><span>${esc(p.top || '—')}</span></div>
+                <div class="pyramid-row"><b>Coração</b><span>${esc(p.heart || '—')}</span></div>
+                <div class="pyramid-row"><b>Fundo</b><span>${esc(p.base || '—')}</span></div>
+              </div>
+            </div>
+          </div>`;
+        pdDetail.querySelector('#pdAddBtn').addEventListener('click', () => addToCart(p.id));
+        aplicarNota();
+      }
+      renderDetalhe();
+      refreshProductPage = renderDetalhe;
+      pdStatus.hidden = true;
+      pdDetail.hidden = false;
+
+      // outros perfumes: primeiro da mesma marca, depois da mesma família, até 3
+      const candidatos = PRODUCTS.filter(r => r.id !== p.id && !r.id.startsWith('teste'));
+      const relacionados = [
+        ...candidatos.filter(r => r.brandFilter === p.brandFilter),
+        ...candidatos.filter(r => r.brandFilter !== p.brandFilter && r.familyFilter === p.familyFilter),
+        ...candidatos.filter(r => r.brandFilter !== p.brandFilter && r.familyFilter !== p.familyFilter)
+      ].slice(0, 3);
+      if (relacionados.length) {
+        document.getElementById('pdRelated').innerHTML = relacionados.map(relacionadoHtml).join('');
+        document.getElementById('pdRelatedSection').hidden = false;
+      }
+
+      if (!window.emAuth || !window.emAuth.isConfigured) return;
+      const reviews = await window.emAuth.getProductReviews(p.id);
+      const reviewsBody = document.getElementById('pdReviews');
+      document.getElementById('avaliacoes').hidden = false;
+      if (!reviews.length) {
+        reviewsBody.innerHTML = '<p class="pd-reviews-empty">Ainda sem avaliações. Quem compra e recebe o perfume pode avaliar em Minha Conta.</p>';
+        return;
+      }
+      const media = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+      const mediaTexto = media.toFixed(1).replace('.', ',');
+      notaResumo = {
+        html: `<span class="pd-stars">${estrelas(media)}</span> ${mediaTexto} · ${contaAvaliacoes(reviews.length)}`,
+        label: `Nota ${mediaTexto} de 5, ${contaAvaliacoes(reviews.length)}`
+      };
+      aplicarNota();
+      reviewsBody.innerHTML = `
+        <div class="pd-reviews-score">
+          <span class="pd-reviews-avg">${mediaTexto}</span>
+          <span class="pd-stars pd-stars-lg">${estrelas(media)}</span>
+          <span class="pd-reviews-count">${contaAvaliacoes(reviews.length)}</span>
+        </div>
+        <ul class="pd-reviews-list">
+          ${reviews.map(r => `
+            <li class="pd-review">
+              <div class="pd-review-head">
+                <span class="pd-review-name">${esc(r.reviewer_name)}</span>
+                <span class="pd-stars" aria-label="${r.rating} de 5 estrelas">${estrelas(r.rating)}</span>
+              </div>
+              <span class="pd-review-date">${new Date(r.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+              ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
+            </li>`).join('')}
+        </ul>`;
+    })();
+  }
 
   /* =========================================================
      página coleção (colecao.html): busca + selects + grade
@@ -417,13 +480,10 @@
             ${p.inStock === false ? '<span class="status-badge status-cancelado stock-badge">Esgotado</span>' : ''}
             <img class="product-photo" src="${p.img}" alt="${p.name}, ${p.brand}" loading="lazy">
             ${p.artBg ? '' : '<span class="shine" aria-hidden="true"></span>'}
-            <button class="quick-view-btn" data-quickview="${p.id}" aria-label="Ver detalhes de ${p.name}">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-            </button>
           </div>
           <div class="product-info">
             <span class="p-eyebrow">${p.family}</span>
-            <h3>${p.name}</h3>
+            <h3><a class="product-card-link" href="${linkProduto(p.id)}">${p.name}</a></h3>
             <div class="card-rating" data-cardrating="${p.id}" hidden></div>
             <div class="product-notes">
               <span class="note-pill">${(p.top || '—').split(',')[0]}</span>
@@ -447,7 +507,9 @@
           const el = productGrid.querySelector(`[data-cardrating="${r.product_id}"]`);
           if (!el) return;
           el.hidden = false;
-          el.innerHTML = `<span class="star">★</span> ${r.media} <span>(${r.total})</span>`;
+          const media = Number(r.media);
+          el.setAttribute('aria-label', `Nota ${media.toFixed(1).replace('.', ',')} de 5, ${contaAvaliacoes(r.total)}`);
+          el.innerHTML = `<span class="pd-stars">${estrelas(media)}</span> ${media.toFixed(1).replace('.', ',')} <span class="card-rating-count">(${r.total})</span>`;
         });
       });
     }
@@ -564,29 +626,22 @@
 
     refresh();
 
-    // clique no card abre a quick view; controles internos (tamanho/carrinho) não propagam pra isso
+    // clique em qualquer parte do card abre a página do produto; o botão de carrinho só adiciona
     productGrid.addEventListener('click', e => {
-      const quickAddBtn = e.target.closest('[data-quickadd]');
-      const quickViewBtn = e.target.closest('[data-quickview]');
       const card = e.target.closest('.product-card');
       if (!card) return;
-
+      const quickAddBtn = e.target.closest('[data-quickadd]');
       if (quickAddBtn) {
         addToCart(quickAddBtn.dataset.quickadd);
         return;
       }
-      // qualquer outro clique no card (incluindo a lupa) abre a quick view
-      openQuickView(quickViewBtn ? quickViewBtn.dataset.quickview : card.dataset.id);
+      if (e.target.closest('a')) return; // o próprio link do nome já navega
+      window.location.href = linkProduto(card.dataset.id);
     });
 
-    // link vindo de outra página apontando pra um produto específico (#p-<id>)
+    // links antigos (colecao#p-<id>, compartilhados antes da página de produto existir)
     if (location.hash.startsWith('#p-')) {
-      const targetId = location.hash.replace('#p-', '');
-      setTimeout(() => {
-        const card = productGrid.querySelector(`[data-id="${targetId}"]`);
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        openQuickView(targetId);
-      }, 300);
+      location.replace(linkProduto(decodeURIComponent(location.hash.slice(3))));
     }
   }
 
@@ -765,7 +820,7 @@
             `).join('')}
           </div>
           <div class="quiz-result-ctas">
-            <a class="btn btn-solid" href="colecao#p-${top.p.id}">Ver ${top.p.name} na coleção</a>
+            <a class="btn btn-solid" href="${linkProduto(top.p.id)}">Ver ${top.p.name}</a>
             <button class="btn btn-ghost" id="quizRestart">Refazer o teste</button>
           </div>
         </div>
@@ -850,6 +905,7 @@
         p.inStock = row.in_stock !== false;
       });
       if (refreshCollectionGrid) refreshCollectionGrid();
+      if (refreshProductPage) refreshProductPage();
     });
   }
 

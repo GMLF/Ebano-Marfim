@@ -113,7 +113,7 @@
           <div class="order-rating" aria-label="Sua avaliação de ${i.name}: ${existente.rating} de 5 estrelas">
             ${[1, 2, 3, 4, 5].map(n => `<span class="star${n <= existente.rating ? ' filled' : ''}">★</span>`).join('')}
           </div>
-          ${existente.comment ? `<p class="product-review-comment">"${existente.comment}"</p>` : ''}
+          ${existente.comment ? `<p class="product-review-comment">"${esc(existente.comment)}"</p>` : ''}
         </div>`;
       }
       return `<div class="product-review-row product-review-input" data-order-id="${o.id}" data-product-id="${i.id}">
@@ -121,6 +121,9 @@
         <div class="order-rating order-rating-input">
           ${[1, 2, 3, 4, 5].map(n => `<button type="button" class="star-btn" data-nota="${n}" aria-label="${n} estrela${n > 1 ? 's' : ''}">★</button>`).join('')}
         </div>
+        <label class="product-review-nome-label" hidden>Nome que aparece na avaliação
+          <input class="product-review-nome" type="text" maxlength="40" value="${esc(nomePublico)}" placeholder="Ex.: Ana S.">
+        </label>
         <textarea class="product-review-text" placeholder="Conte como foi (opcional)" rows="2" hidden></textarea>
         <button type="button" class="btn btn-sm btn-accent product-review-submit" hidden>Enviar avaliação</button>
       </div>`;
@@ -172,6 +175,7 @@
           // avaliação de produto: marca a nota e revela comentário + botão de enviar
           inputRow.dataset.nota = btn.dataset.nota;
           inputRow.querySelectorAll('.star-btn').forEach(b => b.classList.toggle('filled', Number(b.dataset.nota) <= Number(btn.dataset.nota)));
+          inputRow.querySelector('.product-review-nome-label').hidden = false;
           inputRow.querySelector('.product-review-text').hidden = false;
           inputRow.querySelector('.product-review-submit').hidden = false;
           return;
@@ -197,8 +201,9 @@
         const nota = Number(row.dataset.nota);
         if (!nota) { alert('Clique nas estrelas pra dar uma nota antes de enviar.'); return; }
         const comentario = row.querySelector('.product-review-text').value.trim();
-        const email = document.getElementById('accountEmail').textContent || '';
-        const nome = email.split('@')[0] || 'Cliente';
+        // nunca o e-mail: a avaliação é pública
+        const nome = row.querySelector('.product-review-nome').value.trim();
+        if (!nome) { alert('Escreva o nome que vai aparecer na avaliação (pode ser só o primeiro nome).'); return; }
         btn.disabled = true;
         const result = await window.emAuth.avaliarProduto(row.dataset.orderId, row.dataset.productId, nota, comentario, nome);
         if (result.error) {
@@ -255,12 +260,15 @@
   }
 
   let unsubscribeOrders = null;
+  let nomePublico = ''; // "Guilherme F.", sugerido no campo de nome das avaliações
   function showAccount(session) {
     guestView.hidden = true;
     accountView.hidden = false;
     const email = session.user.email || '';
     const meta = session.user.user_metadata || {};
-    const primeiroNome = String(meta.full_name || meta.name || '').trim().split(/\s+/)[0];
+    const partesNome = String(meta.full_name || meta.name || '').trim().split(/\s+/).filter(Boolean);
+    const primeiroNome = partesNome[0] || '';
+    nomePublico = partesNome.length > 1 ? `${primeiroNome} ${partesNome[partesNome.length - 1][0].toUpperCase()}.` : primeiroNome;
     document.getElementById('accountGreeting').textContent = primeiroNome ? `Olá, ${primeiroNome}` : 'Sua conta';
     document.getElementById('accountEmail').textContent = email;
     document.getElementById('accountAvatar').textContent = (primeiroNome || email).charAt(0).toUpperCase() || 'É';
