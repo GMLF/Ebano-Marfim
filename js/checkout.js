@@ -358,7 +358,13 @@
           window.location.href = pagamento.checkoutUrl; // vai pro pagamento de verdade na InfinitePay
           return;
         }
-        // InfinitePay ainda não configurado no servidor: segue como demonstração abaixo, sem travar o cliente
+        // o pedido já foi gravado (pendente): não mostra "demonstração", senão o
+        // cliente acha que a loja é de mentira; e não pede pra clicar de novo,
+        // que criaria um segundo pedido
+        finalizarBtn.disabled = false;
+        finalizarBtn.textContent = 'Ir para pagamento seguro';
+        alert(`Seu pedido nº ${orderNumber} foi registrado, mas não conseguimos abrir a página de pagamento agora. Fale com a gente pelo WhatsApp ou Instagram informando esse número que finalizamos com você.`);
+        return;
       }
 
       finalizarBtn.disabled = false;
