@@ -158,13 +158,18 @@
     const { data, error } = await client.from('product_prices').select('*').in('product_id', ids);
     return error ? [] : data;
   }
+  // catalog_busca (supabase/catalog_busca.sql) traz o preço junto: uma ida ao banco em vez de duas
   async function getCatalogPage({ termo, marca, familia, offset = 0, limite = 30 } = {}) {
     if (!client) return [];
-    let query = client.from('catalog_products').select('*').eq('status', 'completo');
-    if (termo) query = query.ilike('name', `%${termo}%`);
-    if (marca && marca !== 'todos') query = query.eq('brand_filter', marca);
-    if (familia && familia !== 'todos') query = query.eq('family_filter', familia);
-    const { data, error } = await query.order('updated_at', { ascending: false }).range(offset, offset + limite - 1);
+    const consultar = (fonte, colunas) => {
+      let query = client.from(fonte).select(colunas).eq('status', 'completo');
+      if (termo) query = query.ilike('name', `%${termo}%`);
+      if (marca && marca !== 'todos') query = query.eq('brand_filter', marca);
+      if (familia && familia !== 'todos') query = query.eq('family_filter', familia);
+      return query.order('updated_at', { ascending: false }).range(offset, offset + limite - 1);
+    };
+    let { data, error } = await consultar('catalog_busca', '*');
+    if (error) ({ data, error } = await consultar('catalog_products', '*')); // view ainda não criada no banco
     return error ? [] : data;
   }
   async function getCatalogBrands() {

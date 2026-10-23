@@ -546,16 +546,25 @@
     let catalogOffset = 0;
     let catalogHasMore = true;
     let catalogLoadingSeq = 0;
+    const catalogConfigurado = !!(window.emAuth && window.emAuth.isConfigured);
+    const buscasFeitas = new Map(); // "termo|marca|familia|offset" -> linhas: apagar e redigitar não vai ao banco de novo
+    const termoAtual = () => (searchInput && searchInput.value || '').trim();
 
     async function loadMoreCatalog() {
-      if (!window.emAuth || !window.emAuth.isConfigured || !catalogHasMore || !loadMoreBtn) return;
+      if (!catalogConfigurado || !catalogHasMore || !loadMoreBtn) return;
       const meuToken = catalogLoadingSeq;
       loadMoreBtn.disabled = true;
-      const termo = (searchInput && searchInput.value || '').trim();
+      const termo = termoAtual();
       const marca = selectBrand ? selectBrand.value : 'todos';
       const familia = selectFamily ? selectFamily.value : 'todos';
       const limite = 30;
-      const linhas = await window.emAuth.getCatalogPage({ termo, marca, familia, offset: catalogOffset, limite });
+      const primeiraPagina = catalogOffset === 0;
+      const chave = [termo.toLowerCase(), marca, familia, catalogOffset].join('|');
+      let linhas = buscasFeitas.get(chave);
+      if (!linhas) {
+        linhas = await window.emAuth.getCatalogPage({ termo, marca, familia, offset: catalogOffset, limite });
+        buscasFeitas.set(chave, linhas);
+      }
       if (meuToken !== catalogLoadingSeq) return; // filtro mudou enquanto buscava — descarta resultado velho
       catalogHasMore = linhas.length === limite;
       catalogOffset += linhas.length;
@@ -563,11 +572,19 @@
       // cairia no favicon do site como "foto do perfume", o que parece quebrado.
       const linhasComFoto = linhas.filter(r => r.image_bg_url || r.image_url);
       if (linhasComFoto.length) {
-        const precos = await window.emAuth.getPricesFor(linhasComFoto.map(r => r.id));
-        if (meuToken !== catalogLoadingSeq) return;
+        // a view catalog_busca já traz o preço na mesma chamada; sem ela, busca à parte
+        let precos = linhasComFoto.filter(r => r.price != null)
+          .map(r => ({ product_id: r.id, size: 'full', price: r.price, in_stock: r.in_stock }));
+        if (!('price' in linhasComFoto[0])) {
+          precos = await window.emAuth.getPricesFor(linhasComFoto.map(r => r.id));
+          if (meuToken !== catalogLoadingSeq) return;
+        }
         const produtos = linhasComFoto.map(r => normalizeCatalogRow(r, precos));
         produtos.forEach(p => catalogCache.set(p.id, p));
         appendCards(produtos);
+      } else if (primeiraPagina) {
+        const aviso = productGrid.querySelector('.catalog-empty');
+        if (aviso) aviso.textContent = 'Nenhum perfume encontrado com esses filtros.';
       }
       loadMoreBtn.hidden = !catalogHasMore;
       loadMoreBtn.disabled = false;
@@ -578,28 +595,31 @@
       catalogLoadingSeq++;
       catalogOffset = 0;
       catalogHasMore = true;
-      renderGrid(currentFiltered());
+      const termo = termoAtual();
+      const curados = currentFiltered();
+      renderGrid(curados);
+      // nenhum curado bate, mas o catálogo completo ainda vai ser consultado:
+      // "nenhum encontrado" aqui parecia que a busca tinha falhado
+      if (termo && catalogConfigurado && !curados.length) {
+        productGrid.querySelector('.catalog-empty').textContent = `Buscando "${termo}" no catálogo completo...`;
+      }
       // o catálogo importado (fotos de procedência variada) só entra quando a
-      // pessoa pede explicitamente em "Carregar mais" — evita que a grade
-      // premium curada já abra misturada com fotos de qualidade inconsistente.
-      if (loadMoreBtn) loadMoreBtn.hidden = !(window.emAuth && window.emAuth.isConfigured);
+      // pessoa pede explicitamente em "Carregar mais", a não ser numa busca
+      // por nome: aí entra sozinho, já que ela procura um perfume específico.
+      if (loadMoreBtn) loadMoreBtn.hidden = !catalogConfigurado;
+      if (termo) loadMoreCatalog();
     }
     refreshCollectionGrid = refresh;
 
     let searchDebounceTimer;
+    let searchLogTimer;
     if (searchInput) searchInput.addEventListener('input', () => {
-      refresh();
       clearTimeout(searchDebounceTimer);
-      const term = searchInput.value.trim();
-      if (!term) return;
-      // com termo de busca, já traz o catálogo importado automaticamente —
-      // antes, um perfume que só existe no catálogo importado (não é um dos
-      // curados) nunca aparecia na busca, só se a pessoa clicasse "Carregar
-      // mais" por conta própria depois de digitar.
-      searchDebounceTimer = setTimeout(() => {
-        loadMoreCatalog();
-        if (window.emAuth) window.emAuth.logEvent('search', { term });
-      }, 500);
+      // curto de propósito: só pra não consultar o banco a cada letra de uma palavra digitada rápido
+      searchDebounceTimer = setTimeout(refresh, 150);
+      clearTimeout(searchLogTimer);
+      const term = termoAtual();
+      if (term && window.emAuth) searchLogTimer = setTimeout(() => window.emAuth.logEvent('search', { term }), 1200);
     });
     if (selectBrand) selectBrand.addEventListener('change', refresh);
     if (selectFamily) selectFamily.addEventListener('change', refresh);
