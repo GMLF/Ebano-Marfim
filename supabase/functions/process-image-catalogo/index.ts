@@ -58,7 +58,7 @@ function removerFundo(imagem: Image) {
 }
 
 Deno.serve(async req => {
-  const segredoEsperado = Deno.env.get('IMAGE_CRON_SECRET');
+  const segredoEsperado = Deno.env.get('IMAGE_CRON_SECRET')?.trim();
   if (!segredoEsperado || req.headers.get('x-cron-secret') !== segredoEsperado) {
     return new Response(JSON.stringify({ error: 'Não autorizado.' }), { status: 401 });
   }

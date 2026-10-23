@@ -45,46 +45,6 @@ begin
 end;
 $$;
 
--- Atualiza a função do admin pra também trazer a nota de cada pedido.
--- Precisa dropar antes: o Postgres não deixa mudar o formato de retorno
--- de uma função só com "create or replace".
-drop function if exists public.admin_all_orders();
-
-create function public.admin_all_orders()
-returns table(
-  id uuid,
-  order_number text,
-  email text,
-  subtotal numeric,
-  payment_method text,
-  items jsonb,
-  created_at timestamptz,
-  status text,
-  shipping_carrier text,
-  shipping_service text,
-  shipping_price numeric,
-  shipping_days integer,
-  recipient_name text,
-  recipient_phone text,
-  cep text,
-  street text,
-  number text,
-  neighborhood text,
-  city text,
-  state text,
-  rating integer
-)
-language sql
-security definer
-set search_path = public
-as $$
-  select
-    o.id, o.order_number, u.email, o.subtotal, o.payment_method, o.items, o.created_at, o.status,
-    o.shipping_carrier, o.shipping_service, o.shipping_price, o.shipping_days,
-    o.recipient_name, o.recipient_phone, o.cep, o.street, o.number, o.neighborhood, o.city, o.state,
-    o.rating
-  from public.orders o
-  join auth.users u on u.id = o.user_id
-  where public.is_admin()
-  order by o.created_at desc;
-$$;
+-- admin_all_orders (que também traz a nota) é definida em shipping_tracking.sql.
+-- Não redefina aqui: rodar este arquivo de novo apagaria os campos de rastreio
+-- do admin e o botão "Comprar etiqueta" sumiria sem erro nenhum.

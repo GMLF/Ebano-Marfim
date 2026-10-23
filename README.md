@@ -260,7 +260,7 @@ Rode `supabase/shipping_tracking.sql` no SQL Editor do Supabase. Ele adiciona:
 **Pra ativar:**
 1. Rode `supabase/shipping_tracking.sql`.
 2. Publique as duas functions: `supabase functions deploy comprar-etiqueta` e `supabase functions deploy superfrete-webhook`.
-3. Nos **Secrets** das Edge Functions, além dos que já existem pro cálculo de frete (`SUPERFRETE_TOKEN`, `ORIGEM_CEP`, `CONTATO_EMAIL`), adicione os dados completos de quem envia (exigidos pelo SuperFrete pra gerar etiqueta, não só cotar) e o segredo do webhook:
+3. Nos **Secrets** das Edge Functions, além dos que já existem pro cálculo de frete (`SUPERFRETE_TOKEN`, `ORIGEM_CEP`, `CONTATO_EMAIL`), adicione os dados completos de quem envia (exigidos pelo SuperFrete pra gerar etiqueta, não só cotar):
    ```bash
    supabase secrets set ORIGEM_NOME="Seu Nome ou Razão Social"
    supabase secrets set ORIGEM_RUA="Rua Exemplo"
@@ -269,9 +269,18 @@ Rode `supabase/shipping_tracking.sql` no SQL Editor do Supabase. Ele adiciona:
    supabase secrets set ORIGEM_CIDADE="Londrina"
    supabase secrets set ORIGEM_UF="PR"
    supabase secrets set ORIGEM_DOCUMENTO="000.000.000-00"
-   supabase secrets set SUPERFRETE_WEBHOOK_SECRET="invente-uma-senha-longa-aleatoria-aqui"
    ```
-4. **Passo manual, só dá pra fazer no painel do SuperFrete** (não tem API pra isso): em **Integrações > Webhooks**, cadastre a URL `https://<seu-projeto>.supabase.co/functions/v1/superfrete-webhook`, selecione os eventos `order.posted` e `order.delivered`, e defina um **secret_token** — use exatamente o mesmo valor do `SUPERFRETE_WEBHOOK_SECRET` do passo 3, senão o webhook chega e é rejeitado por assinatura inválida.
+4. **Cadastre o webhook pela API do SuperFrete** (o painel deles não tem essa opção). Rode uma vez, com o seu `SUPERFRETE_TOKEN`:
+   ```bash
+   curl -X POST https://api.superfrete.com/api/v0/webhook \
+     -H "Authorization: Bearer SEU_SUPERFRETE_TOKEN" \
+     -H "User-Agent: Ebano & Marfim (seu-email@contato.com)" \
+     -H "Content-Type: application/json" \
+     -d '{"name":"Ebano e Marfim - rastreio","url":"https://<seu-projeto>.supabase.co/functions/v1/superfrete-webhook","events":["order.posted","order.delivered"]}'
+   ```
+   A resposta traz um `secret_token`, gerado pelo SuperFrete e mostrado **só essa vez** (o `GET` de listar webhooks não devolve ele de novo). Salve esse valor no secret `SUPERFRETE_WEBHOOK_SECRET` e redeploye a `superfrete-webhook`. Se perder o valor, apague o webhook (`DELETE /api/v0/webhook/<id>`) e crie outro.
+
+   Secret novo ou alterado no painel do Supabase só vale depois de redeployar a function. As functions ignoram espaço e quebra de linha nas pontas dos secrets, que costumam vir junto ao colar.
 
 **Segurança:** o preço do frete que o cliente vê no checkout vem do navegador dele — antes de gastar saldo de verdade comprando a etiqueta, `comprar-etiqueta` recota o frete no servidor pro mesmo serviço e CEP, e recusa a compra se o preço real for bem mais alto do que o que foi cobrado (sinal de que o `shipping_service_id` foi adulterado pra um serviço mais caro do que o exibido). O `superfrete-webhook` confere a assinatura HMAC-SHA256 (`X-ME-Signature`) de toda chamada antes de confiar nela, já que é uma URL pública.
 
@@ -282,7 +291,7 @@ No `admin.html`, pedidos `pago` com endereço (não-Londrina) ganham o botão **
 Rode `supabase/order_reviews.sql` no SQL Editor do Supabase. Ele adiciona:
 - Colunas `rating` (1 a 5) e `rated_at` em `orders`.
 - A função `avaliar_pedido`, que só deixa o próprio dono do pedido avaliar, e só depois do status virar `entregue` — não é possível avaliar antes disso nem avaliar o pedido de outra pessoa.
-- Atualiza `admin_all_orders()` pra também trazer a nota de cada pedido.
+- A nota de cada pedido aparece no admin via `admin_all_orders()`, definida em `supabase/shipping_tracking.sql` (rode ele também).
 
 Em **Minha Conta**, todo pedido com status "Entregue" ganha um seletor de estrelas (1 a 5) — clicou, já salva, sem precisar de mais nada. Pedidos em outros status não mostram a opção de avaliar. No painel de admin, a nota aparece junto de cada pedido em "Pedidos e envio", e tem um card **"Avaliação média"** no topo do dashboard, calculado sobre os pedidos avaliados no período selecionado.
 

@@ -7,16 +7,13 @@
 // Segurança: essa URL é pública (o SuperFrete precisa conseguir chamá-la
 // de fora). Cada chamada vem assinada com HMAC-SHA256 no cabeçalho
 // X-ME-Signature, calculado sobre o corpo cru da requisição usando o
-// "secret_token" que você define ao cadastrar o webhook no painel do
-// SuperFrete — conferimos essa assinatura antes de confiar em qualquer
-// coisa do corpo. Usa a service_role só pra essa escrita pontual.
+// "secret_token" do webhook — conferimos essa assinatura antes de confiar
+// em qualquer coisa do corpo. Usa a service_role só pra essa escrita pontual.
 //
-// Configuração (feita no painel do SuperFrete, Integrações > Webhooks,
-// não tem como fazer isso por código):
-//   URL do swebhook: https://<seu-projeto>.supabase.co/functions/v1/superfrete-webhook
-//   Eventos: order.posted, order.delivered
-//   Secret necessário aqui (Supabase > Edge Functions > superfrete-webhook > Secrets):
-//     SUPERFRETE_WEBHOOK_SECRET -> o MESMO "secret_token" cadastrado no painel do SuperFrete
+// Configuração: o webhook NÃO é cadastrado pelo painel do SuperFrete, e sim
+// pela API deles (POST https://api.superfrete.com/api/v0/webhook, ver README).
+// O secret_token é gerado pelo SuperFrete e só aparece UMA vez, na resposta
+// desse POST — esse valor vai no secret SUPERFRETE_WEBHOOK_SECRET do Supabase.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0';
 
