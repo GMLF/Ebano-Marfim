@@ -28,6 +28,15 @@ const ORIGENS_PERMITIDAS = new Set([
   'http://127.0.0.1:8080'
 ]);
 
+// A InfinitePay espera "+5543999998888"; o checkout salva do jeito que o
+// cliente digitou, tipo "(43) 99999-8888"
+function telefoneE164(telefone: string | null): string | undefined {
+  const digitos = String(telefone || '').replace(/\D/g, '');
+  if (digitos.length === 10 || digitos.length === 11) return `+55${digitos}`;
+  if ((digitos.length === 12 || digitos.length === 13) && digitos.startsWith('55')) return `+${digitos}`;
+  return undefined;
+}
+
 function corsHeadersPara(origin: string | null) {
   const origemPermitida = origin && ORIGENS_PERMITIDAS.has(origin) ? origin : 'https://ebanomarfim.com.br';
   return {
@@ -82,6 +91,9 @@ Deno.serve(async req => {
       return erro(503, 'Pagamento ainda não configurado no servidor.');
     }
 
+    const { data: dadosUsuario } = await clienteUsuario.auth.getUser();
+    const email = dadosUsuario?.user?.email;
+
     const resposta = await fetch('https://api.checkout.infinitepay.io/links', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -99,7 +111,8 @@ Deno.serve(async req => {
         ],
         customer: {
           name: pedido.recipient_name || undefined,
-          phone_number: pedido.recipient_phone || undefined
+          email: email || undefined,
+          phone_number: telefoneE164(pedido.recipient_phone)
         }
       })
     });
