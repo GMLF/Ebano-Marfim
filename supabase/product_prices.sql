@@ -42,7 +42,8 @@ insert into public.product_prices (product_id, size, price) values
   ('lattafa-asad', '3', 27), ('lattafa-asad', '5', 41), ('lattafa-asad', '10', 69), ('lattafa-asad', 'full', 209),
   ('lattafa-oud-mood', '3', 31), ('lattafa-oud-mood', '5', 47), ('lattafa-oud-mood', '10', 79), ('lattafa-oud-mood', 'full', 239),
   ('mykonos-california', '3', 34), ('mykonos-california', '5', 49), ('mykonos-california', '10', 84), ('mykonos-california', 'full', 259),
-  ('mykonos-myego', '3', 34), ('mykonos-myego', '5', 49), ('mykonos-myego', '10', 84), ('mykonos-myego', 'full', 259)
+  ('mykonos-myego', '3', 34), ('mykonos-myego', '5', 49), ('mykonos-myego', '10', 84), ('mykonos-myego', 'full', 259),
+  ('teste-r1', 'full', 1) -- produto temporário de teste, remover a linha e o produto em data/products.js depois
 on conflict (product_id, size) do update set price = excluded.price;
 
 -- Recalcula o subtotal de cada pedido a partir dos preços reais (product_prices),
@@ -61,8 +62,12 @@ declare
 begin
   for item in select * from jsonb_array_elements(new.items)
   loop
+    -- o carrinho só vende frasco fechado hoje (decant saiu da venda) e nem
+    -- manda mais a chave "size" no item — sem o coalesce, item->>'size' vinha
+    -- NULL, "size = NULL" nunca é verdadeiro, e TODO pedido caía na exceção
+    -- abaixo, mesmo com produto e preço corretos.
     select price into preco from public.product_prices
-      where product_id = item->>'id' and size = (item->>'size');
+      where product_id = item->>'id' and size = coalesce(item->>'size', 'full');
     if preco is null then
       raise exception 'Produto ou tamanho inválido no pedido: % / %', item->>'id', item->>'size';
     end if;

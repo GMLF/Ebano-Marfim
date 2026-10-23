@@ -5,10 +5,11 @@
 // o PNG resultante no bucket público "catalog-fotos" (ver catalog_image_bg.sql).
 //
 // Funciona bem em foto de estúdio com fundo branco/liso (a maioria das fotos
-// de perfume) — fundos mais complexos ficam com recorte imperfeito, e fotos
-// em WEBP/AVIF (formato que a ImageScript não decodifica) simplesmente não
-// são processadas; nesses casos o produto continua com a foto original
-// (js/script.js usa image_bg_url se existir, senão cai pra image_url).
+// de perfume) — fundos mais complexos ficam com recorte imperfeito. Fotos em
+// WEBP/AVIF (formato que a ImageScript não decodifica) passam antes pelo
+// images.weserv.nl, um proxy público e gratuito de imagem, que devolve a
+// mesma foto já reconvertida pra PNG (teve ~2400 produtos — quase 40% do
+// catálogo importado — presos em "falhou" por causa só disso).
 //
 // Configuração necessária (Edge Functions > process-image-catalogo > Secrets):
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY -> já existem por padrão
@@ -21,6 +22,15 @@ const LOTE_POR_EXECUCAO = 4; // pequeno de propósito — decodificar/processar 
 const TAMANHO_MAX = 450; // px no maior lado — mantém o processamento e o arquivo final leves
 const LIMIAR_DENTRO = 18; // distância de cor até aqui: totalmente transparente
 const LIMIAR_FORA = 45; // distância de cor a partir daqui: mantém opaco (transição suave entre os dois)
+
+// WEBP/AVIF não são decodificados pela ImageScript — nesses casos busca a
+// mesma foto através de um proxy público que converte pra PNG antes.
+function urlParaBaixar(imageUrl: string): string {
+  if (/\.(webp|avif)(\?|$)/i.test(imageUrl)) {
+    return `https://images.weserv.nl/?url=${encodeURIComponent(imageUrl)}&output=png`;
+  }
+  return imageUrl;
+}
 
 function corDistancia(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
   return Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
@@ -71,7 +81,7 @@ Deno.serve(async req => {
 
   for (const produto of produtos ?? []) {
     try {
-      const resposta = await fetch(produto.image_url);
+      const resposta = await fetch(urlParaBaixar(produto.image_url));
       if (!resposta.ok) throw new Error(`status ${resposta.status} ao baixar a foto`);
       const bytes = new Uint8Array(await resposta.arrayBuffer());
 

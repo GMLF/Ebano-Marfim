@@ -168,5 +168,15 @@ window.PRODUCTS = [
       base: 'Âmbar, cardamomo, musk, sândalo, baunilha, vetiver, cedro-da-virgínia',
       fullSize: 100, fullPrice: 319,
       matchNotes: ['ambar', 'vanilla', 'musk', 'sandalo', 'bergamota']
+    },
+    {
+      // produto temporário, só pra testar o fluxo de ponta a ponta (checkout
+      // -> pagamento -> envio) sem gastar de verdade — remover depois do teste.
+      id: 'teste-r1', brand: 'Teste', brandFilter: 'bidaya', familyFilter: 'gourmand',
+      name: '[TESTE] Produto R$1', family: 'Uso interno · não vender de verdade',
+      img: 'assets/favicon.svg',
+      top: '—', heart: '—', base: '—',
+      fullSize: 1, fullPrice: 1,
+      matchNotes: []
     }
 ];

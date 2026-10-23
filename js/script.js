@@ -524,12 +524,20 @@
     }
     refreshCollectionGrid = refresh;
 
-    let searchLogTimer;
+    let searchDebounceTimer;
     if (searchInput) searchInput.addEventListener('input', () => {
       refresh();
-      clearTimeout(searchLogTimer);
+      clearTimeout(searchDebounceTimer);
       const term = searchInput.value.trim();
-      if (term && window.emAuth) searchLogTimer = setTimeout(() => window.emAuth.logEvent('search', { term }), 600);
+      if (!term) return;
+      // com termo de busca, já traz o catálogo importado automaticamente —
+      // antes, um perfume que só existe no catálogo importado (não é um dos
+      // curados) nunca aparecia na busca, só se a pessoa clicasse "Carregar
+      // mais" por conta própria depois de digitar.
+      searchDebounceTimer = setTimeout(() => {
+        loadMoreCatalog();
+        if (window.emAuth) window.emAuth.logEvent('search', { term });
+      }, 500);
     });
     if (selectBrand) selectBrand.addEventListener('change', refresh);
     if (selectFamily) selectFamily.addEventListener('change', refresh);
