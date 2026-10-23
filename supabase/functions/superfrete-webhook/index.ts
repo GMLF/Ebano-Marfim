@@ -13,7 +13,7 @@
 //
 // Configuração (feita no painel do SuperFrete, Integrações > Webhooks,
 // não tem como fazer isso por código):
-//   URL do webhook: https://<seu-projeto>.supabase.co/functions/v1/superfrete-webhook
+//   URL do swebhook: https://<seu-projeto>.supabase.co/functions/v1/superfrete-webhook
 //   Eventos: order.posted, order.delivered
 //   Secret necessário aqui (Supabase > Edge Functions > superfrete-webhook > Secrets):
 //     SUPERFRETE_WEBHOOK_SECRET -> o MESMO "secret_token" cadastrado no painel do SuperFrete
@@ -49,7 +49,8 @@ async function assinaturaValida(corpoCru: string, assinaturaRecebida: string | n
 Deno.serve(async req => {
   try {
     const corpoCru = await req.text();
-    const segredo = Deno.env.get('SUPERFRETE_WEBHOOK_SECRET');
+    // trim: colar o secret no painel do Supabase costuma trazer um "\n" invisível no fim
+    const segredo = Deno.env.get('SUPERFRETE_WEBHOOK_SECRET')?.trim();
     const assinatura = req.headers.get('x-me-signature');
 
     if (!segredo) {

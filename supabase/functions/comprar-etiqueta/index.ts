@@ -96,17 +96,19 @@ Deno.serve(async req => {
       return erro(400, 'Esse pedido não tem CPF do destinatário salvo: o SuperFrete exige pra gerar etiqueta.');
     }
 
-    const token = Deno.env.get('SUPERFRETE_TOKEN');
-    const contatoEmail = Deno.env.get('CONTATO_EMAIL') || 'ebanoemarfimoficial@gmail.com';
+    // trim: secrets colados no painel do Supabase podem vir com "\n" invisível no fim
+    const env = (nome: string) => Deno.env.get(nome)?.trim();
+    const token = env('SUPERFRETE_TOKEN');
+    const contatoEmail = env('CONTATO_EMAIL') || 'ebanoemarfimoficial@gmail.com';
     const origem = {
-      nome: Deno.env.get('ORIGEM_NOME'),
-      cep: Deno.env.get('ORIGEM_CEP'),
-      rua: Deno.env.get('ORIGEM_RUA'),
-      numero: Deno.env.get('ORIGEM_NUMERO') || '',
-      bairro: Deno.env.get('ORIGEM_BAIRRO'),
-      cidade: Deno.env.get('ORIGEM_CIDADE'),
-      uf: Deno.env.get('ORIGEM_UF'),
-      documento: Deno.env.get('ORIGEM_DOCUMENTO')
+      nome: env('ORIGEM_NOME'),
+      cep: env('ORIGEM_CEP'),
+      rua: env('ORIGEM_RUA'),
+      numero: env('ORIGEM_NUMERO') || '',
+      bairro: env('ORIGEM_BAIRRO'),
+      cidade: env('ORIGEM_CIDADE'),
+      uf: env('ORIGEM_UF'),
+      documento: env('ORIGEM_DOCUMENTO')
     };
     if (!token || !origem.nome || !origem.cep || !origem.rua || !origem.bairro || !origem.cidade || !origem.uf) {
       return erro(503, 'Compra de etiqueta ainda não configurada no servidor (faltam secrets de origem).');
