@@ -25,7 +25,7 @@ Deno.serve(async req => {
   try {
     const url = new URL(req.url);
     const token = url.searchParams.get('token');
-    const segredoEsperado = Deno.env.get('WEBHOOK_SECRET');
+    const segredoEsperado = Deno.env.get('WEBHOOK_SECRET')?.trim(); // colar no painel costuma trazer "\n" no fim
 
     if (!segredoEsperado || token !== segredoEsperado) {
       return new Response('não autorizado', { status: 401 });

@@ -73,9 +73,10 @@ Deno.serve(async req => {
     // essa trava, daria pra gerar cobrança de novo num pedido já pago
     if (pedido.status !== 'pendente') return erro(409, 'Esse pedido não está mais aguardando pagamento.');
 
-    const handle = Deno.env.get('INFINITEPAY_HANDLE');
-    const siteUrl = Deno.env.get('SITE_URL');
-    const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
+    // trim: colar no painel costuma trazer "\n" no fim, que quebraria a URL do webhook
+    const handle = Deno.env.get('INFINITEPAY_HANDLE')?.trim();
+    const siteUrl = Deno.env.get('SITE_URL')?.trim();
+    const webhookSecret = Deno.env.get('WEBHOOK_SECRET')?.trim();
 
     if (!handle || !siteUrl || !webhookSecret) {
       return erro(503, 'Pagamento ainda não configurado no servidor.');
