@@ -35,6 +35,7 @@ const CAIXA_PADRAO = { altura: 6, largura: 12, comprimento: 16 };
 // o que foi cobrado do cliente.
 const TOLERANCIA_FRETE_REAIS = 5;
 const TOLERANCIA_FRETE_PERCENTUAL = 0.2;
+const SERVICOS_SUPERFRETE = '1,2,17,3,33,31'; // mesmos de calcular-frete
 
 const ORIGENS_PERMITIDAS = new Set([
   'https://gmlf.github.io',
@@ -130,15 +131,15 @@ Deno.serve(async req => {
     // preenche no navegador — ou seja, um cliente poderia adulterar o
     // serviço escolhido (ex.: trocar PAC barato por SEDEX caro) sem mudar o
     // preço mostrado. Antes de gastar saldo de verdade, recotamos aqui no
-    // servidor pro mesmo serviço e CEP, e abortamos se o preço real for bem
-    // maior do que o que foi cobrado do cliente.
+    // servidor todos os serviços pro mesmo CEP e abortamos se a escolha não
+    // bater com o que foi cobrado (ou, no frete grátis, se não for a mais barata).
     const respRecotacao = await fetch(`${SUPERFRETE_BASE}/calculator`, {
       method: 'POST',
       headers: headersSuperfreteConsulta,
       body: JSON.stringify({
         from: { postal_code: String(origem.cep).replace(/\D/g, '') },
         to: { postal_code: String(pedido.cep).replace(/\D/g, '') },
-        services: String(pedido.shipping_service_id),
+        services: SERVICOS_SUPERFRETE,
         package: {
           height: CAIXA_PADRAO.altura,
           width: CAIXA_PADRAO.largura,
@@ -156,9 +157,23 @@ Deno.serve(async req => {
       return erro(502, 'O SuperFrete não devolveu preço pra esse serviço de envio agora. Confira manualmente antes de comprar.');
     }
     const precoReal = Number(cotacaoReal.price);
+    if (pedido.free_shipping) {
+      // frete grátis vale só pra opção mais barata (o cliente pagou R$0 e a loja banca)
+      const maisBarato = Math.min(
+        ...cotacoesReais.filter((c: any) => !c.has_error && c.price).map((c: any) => Number(c.price))
+      );
+      const toleranciaGratis = Math.max(TOLERANCIA_FRETE_REAIS, maisBarato * TOLERANCIA_FRETE_PERCENTUAL);
+      if (precoReal > maisBarato + toleranciaGratis) {
+        console.error(`[comprar-etiqueta] frete grátis com serviço que não é o mais barato no pedido ${orderId}`);
+        return erro(
+          409,
+          `Esse pedido tem frete grátis, que vale só pra opção mais barata (R$${maisBarato.toFixed(2)}), mas o serviço escolhido custa R$${precoReal.toFixed(2)}. Confira o pedido antes de comprar a etiqueta.`
+        );
+      }
+    }
     const precoCobrado = Number(pedido.shipping_price || 0);
     const tolerancia = Math.max(TOLERANCIA_FRETE_REAIS, precoCobrado * TOLERANCIA_FRETE_PERCENTUAL);
-    if (precoReal > precoCobrado + tolerancia) {
+    if (!pedido.free_shipping && precoReal > precoCobrado + tolerancia) {
       console.error(
         `[comprar-etiqueta] preço real (R$${precoReal}) muito maior que o cobrado do cliente (R$${precoCobrado}) no pedido ${orderId}`
       );

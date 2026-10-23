@@ -72,7 +72,32 @@
 </div>
 
 <main>
-  <section class="section wrap">
+  <!-- página de quem já está logado -->
+  <section class="section wrap account-page" id="accountView" hidden>
+    <header class="account-hero">
+      <div class="avatar" id="accountAvatar" aria-hidden="true">É</div>
+      <div class="account-hero-text">
+        <span class="eyebrow">Minha conta</span>
+        <h2 id="accountGreeting">Sua conta</h2>
+        <p class="account-email" id="accountEmail"></p>
+      </div>
+      <div class="account-hero-actions">
+        <a class="btn btn-solid btn-sm" id="adminLink" href="admin" hidden>Painel de Admin</a>
+        <button class="btn btn-sm" id="signOutBtn" type="button">Sair da conta</button>
+      </div>
+    </header>
+
+    <div class="account-orders-head">
+      <h3>Meus pedidos</h3>
+      <span class="account-orders-count" id="accountOrdersCount"></span>
+    </div>
+    <div class="account-orders-list" id="accountOrders">
+      <p class="account-empty">Carregando pedidos...</p>
+    </div>
+  </section>
+
+  <!-- quem não está logado: login / cadastro / recuperação -->
+  <section class="section wrap" id="guestView">
     <div class="section-head reveal pending" style="justify-content:center; text-align:center; flex-direction:column; align-items:center;">
       <span class="eyebrow">Minha conta</span>
       <h2 style="margin-top:12px;">Entre ou crie sua conta</h2>
@@ -83,25 +108,7 @@
     </div>
 
     <div class="auth-panel gilded-frame reveal pending">
-
-      <!-- painel de quem já está logado -->
-      <div class="account-view" id="accountView">
-        <div class="avatar" id="accountAvatar">É</div>
-        <div>
-          <div class="account-email" id="accountEmail">voce@email.com</div>
-        </div>
-        <div class="account-orders">
-          <b style="color:var(--text);">Meus pedidos</b>
-          <div id="accountOrders" style="margin-top:12px;">
-            <p>Carregando pedidos...</p>
-          </div>
-        </div>
-        <a class="btn btn-solid" id="adminLink" href="admin" style="align-self:center;" hidden>Painel de Admin</a>
-        <button class="btn btn-ghost" id="signOutBtn" style="align-self:center;">Sair da conta</button>
-      </div>
-
-      <!-- painel de login/cadastro/recuperação -->
-      <div id="guestView">
+      <div>
         <div class="auth-tabs">
           <button data-tab="login" class="active" type="button">Entrar</button>
           <button data-tab="signup" type="button">Criar conta</button>

@@ -215,6 +215,11 @@
     const { error } = await client.rpc('confirmar_recebimento', { pedido_id: orderId });
     return { error: error ? error.message : null };
   }
+  async function cancelarPedido(orderId) {
+    if (!client) return { error: NOT_CONFIGURED_MSG };
+    const { error } = await client.rpc('cancelar_pedido', { pedido_id: orderId });
+    return { error: error ? error.message : null };
+  }
   async function getAnalyticsEvents() {
     if (!client) return [];
     const { data, error } = await client
@@ -267,7 +272,7 @@
     isConfigured: !!client,
     signUp, signIn, signInWithGoogle, resetPassword, signOut, getSession, onChange,
     saveOrder, getOrders, subscribeToMyOrders, avaliarPedido, isAdmin, getAllOrders, getAllOrdersWithEmail, updateOrderStatus, getAnalyticsEvents, logEvent, getTopCustomers, calcularFrete, criarPagamento,
-    comprarEtiqueta, confirmarRecebimento,
+    comprarEtiqueta, confirmarRecebimento, cancelarPedido,
     avaliarProduto, getMyProductReviews, getProductReviews, getReviewsSummary,
     getCatalogPage, getCatalogBrands, getCatalogMatches, getPricesFor, getCatalogProduct
   };

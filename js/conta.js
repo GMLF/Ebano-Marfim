@@ -40,12 +40,23 @@
     { key: 'entregue', label: 'Entregue', icon: '<path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1v-9"/>' }
   ];
   const STATUS_ORDER = ['pendente', 'pago', 'enviado', 'entregue'];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
   function pedidoTrackerHtml(o) {
     if (o.status === 'cancelado') {
-      return `<div class="status-badge status-cancelado" style="margin-top:12px;">Pedido cancelado</div>`;
+      return `<p class="order-card-note">Pedido cancelado. Nenhuma cobrança foi feita.</p>`;
+    }
+    if (!o.status || o.status === 'pendente') {
+      return `<div class="order-card-pending">
+        <p class="order-card-note">Aguardando pagamento. Se você não concluiu, pode voltar e pagar agora ou cancelar o pedido.</p>
+        <div class="order-card-actions">
+          <button type="button" class="btn btn-sm btn-solid pagar-pedido-btn" data-order-id="${o.id}">Finalizar pagamento</button>
+          <button type="button" class="btn btn-sm cancelar-pedido-btn" data-order-id="${o.id}">Cancelar pedido</button>
+        </div>
+      </div>`;
     }
     const atual = STATUS_ORDER.indexOf(o.status);
-    return `<div class="checkout-steps" style="margin:14px 0 0;" aria-label="Status do pedido: ${STATUS_LABEL[o.status] || 'Pendente'}">
+    return `<div class="checkout-steps order-card-tracker" aria-label="Status do pedido: ${STATUS_LABEL[o.status] || 'Pendente'}">
       ${TRACKER_STEPS.map((step, i) => {
         const alvo = i + 1; // pago=1, enviado=2, entregue=3 no STATUS_ORDER
         const done = atual > alvo || (alvo === TRACKER_STEPS.length && atual === alvo);
@@ -63,8 +74,17 @@
         </div>`;
       }).join('')}
     </div>
-    ${o.tracking_code ? `<p style="font-size:.8rem; color:var(--text-faint); margin-top:8px;">Rastreio: ${o.tracking_code}</p>` : ''}
-    ${o.status === 'enviado' ? `<button type="button" class="btn btn-sm btn-ghost confirmar-recebimento-btn" data-order-id="${o.id}" style="margin-top:8px;">Recebi meu pedido</button>` : ''}`;
+    ${o.tracking_code ? `<p class="order-card-note">Código de rastreio: <b>${esc(o.tracking_code)}</b></p>` : ''}
+    ${o.status === 'enviado' ? `<div class="order-card-actions"><button type="button" class="btn btn-sm btn-solid confirmar-recebimento-btn" data-order-id="${o.id}">Recebi meu pedido</button></div>` : ''}`;
+  }
+
+  function entregaTexto(o) {
+    if (!o.shipping_carrier) return '';
+    const servico = o.shipping_carrier === 'Entrega própria'
+      ? o.shipping_service
+      : [o.shipping_carrier, o.shipping_service].filter(Boolean).join(' ');
+    const preco = Number(o.shipping_price) > 0 ? fmt(o.shipping_price) : 'Grátis';
+    return `${esc(servico)} · ${preco}`;
   }
 
   function estrelasHtml(o) {
@@ -113,27 +133,36 @@
       window.emAuth.getOrders(),
       window.emAuth.getMyProductReviews()
     ]);
+    const contador = document.getElementById('accountOrdersCount');
+    if (contador) contador.textContent = orders.length ? `${orders.length} ${orders.length === 1 ? 'pedido' : 'pedidos'}` : '';
     if (!orders.length) {
-      ordersBox.innerHTML = '<p style="margin-top:8px;">Você ainda não fez nenhum pedido por aqui.</p>';
+      ordersBox.innerHTML = '<p class="account-empty">Você ainda não fez nenhum pedido por aqui. <a href="colecao">Conheça a coleção</a>.</p>';
       return;
     }
     ordersBox.innerHTML = orders.map(o => `
-      <div class="order-history-item">
-        <div class="order-history-head">
-          <span>Pedido nº ${o.order_number}</span>
-          <span>${new Date(o.created_at).toLocaleDateString('pt-BR')}</span>
-        </div>
-        <div class="order-history-body">
-          ${o.items.map(i => `<span>${i.name} · frasco ${i.ml}ml ×${i.qty}</span>`).join('')}
-        </div>
-        <div class="order-history-foot">
+      <article class="order-card">
+        <header class="order-card-head">
+          <div>
+            <span class="order-card-number">Pedido nº ${esc(o.order_number)}</span>
+            <span class="order-card-date">${new Date(o.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+          </div>
           <span class="status-badge status-${o.status || 'pendente'}">${STATUS_LABEL[o.status] || 'Pendente'}</span>
-          <span>${o.payment_method === 'pix' ? 'Pix' : 'Cartão'} · ${fmt(o.subtotal)}</span>
+        </header>
+        <ul class="order-card-items">
+          ${o.items.map(i => `<li>
+            <img src="${esc(i.img)}" alt="" loading="lazy">
+            <span class="order-item-name">${esc(i.name)}</span>
+            <span class="order-item-meta">Frasco ${esc(i.ml)}ml · ${esc(i.qty)}x</span>
+          </li>`).join('')}
+        </ul>
+        <div class="order-card-summary">
+          <span>${entregaTexto(o)}</span>
+          <span>${o.payment_method === 'pix' ? 'Pix' : 'Cartão'} · <b>${fmt(o.subtotal)}</b></span>
         </div>
         ${pedidoTrackerHtml(o)}
         ${estrelasHtml(o)}
         ${produtosAvaliacaoHtml(o, minhasAvaliacoes)}
-      </div>
+      </article>
     `).join('');
 
     ordersBox.querySelectorAll('.order-rating-input .star-btn').forEach(btn => {
@@ -194,15 +223,47 @@
         renderOrders(); // recarrega pra já mostrar "Entregue"
       });
     });
+
+    ordersBox.querySelectorAll('.pagar-pedido-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Abrindo pagamento...';
+        const result = await window.emAuth.criarPagamento(btn.dataset.orderId);
+        if (result && result.checkoutUrl) {
+          window.location.href = result.checkoutUrl;
+          return;
+        }
+        alert('Não conseguimos abrir a página de pagamento agora. Tente de novo em instantes ou fale com a gente pelo WhatsApp.');
+        btn.disabled = false;
+        btn.textContent = 'Finalizar pagamento';
+      });
+    });
+
+    ordersBox.querySelectorAll('.cancelar-pedido-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Cancelar esse pedido? Ele ainda não foi pago, então nada será cobrado.')) return;
+        btn.disabled = true;
+        const result = await window.emAuth.cancelarPedido(btn.dataset.orderId);
+        if (result.error) {
+          alert('Não deu pra cancelar: ' + result.error);
+          btn.disabled = false;
+          return;
+        }
+        renderOrders();
+      });
+    });
   }
 
   let unsubscribeOrders = null;
   function showAccount(session) {
     guestView.hidden = true;
-    accountView.classList.add('active');
+    accountView.hidden = false;
     const email = session.user.email || '';
+    const meta = session.user.user_metadata || {};
+    const primeiroNome = String(meta.full_name || meta.name || '').trim().split(/\s+/)[0];
+    document.getElementById('accountGreeting').textContent = primeiroNome ? `Olá, ${primeiroNome}` : 'Sua conta';
     document.getElementById('accountEmail').textContent = email;
-    document.getElementById('accountAvatar').textContent = email.charAt(0).toUpperCase() || 'É';
+    document.getElementById('accountAvatar').textContent = (primeiroNome || email).charAt(0).toUpperCase() || 'É';
     renderOrders();
     window.emAuth.isAdmin().then(admin => {
       const adminLink = document.getElementById('adminLink');
@@ -216,7 +277,7 @@
   function showGuest() {
     if (unsubscribeOrders) { unsubscribeOrders(); unsubscribeOrders = null; }
     guestView.hidden = false;
-    accountView.classList.remove('active');
+    accountView.hidden = true;
   }
 
   window.emAuth.getSession().then(session => { if (session) showAccount(session); });

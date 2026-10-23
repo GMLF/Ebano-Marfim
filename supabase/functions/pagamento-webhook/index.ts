@@ -62,8 +62,13 @@ Deno.serve(async req => {
       return new Response('valor não confere', { status: 200 });
     }
 
-    if (pedido.status !== 'pendente') {
+    // cancelado também entra: o link da InfinitePay segue válido depois que o
+    // cliente cancela, e se ele pagar mesmo assim o dinheiro entrou de verdade
+    if (pedido.status !== 'pendente' && pedido.status !== 'cancelado') {
       return new Response('ok (já processado)', { status: 200 });
+    }
+    if (pedido.status === 'cancelado') {
+      console.error(`[pagamento-webhook] pedido ${orderNsu} estava cancelado e foi pago: voltando pra "pago"`);
     }
 
     const { error } = await admin.from('orders').update({ status: 'pago' }).eq('id', pedido.id);

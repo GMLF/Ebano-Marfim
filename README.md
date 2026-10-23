@@ -99,6 +99,8 @@ O checkout já tem o botão "Calcular frete" e a Edge Function pronta (`supabase
    - `ORIGEM_CEP` = o CEP de onde você envia (só números)
    - `CONTATO_EMAIL` = um e-mail de contato seu
 
+**Frete grátis:** a partir de R$399 em perfumes (antes do desconto do Pix), a opção de transportadora mais barata sai grátis; as outras continuam cobradas. O gatilho de `supabase/product_prices.sql` marca o pedido com `free_shipping`, e a `comprar-etiqueta` recusa comprar etiqueta se o serviço escolhido não for o mais barato da recotação. O valor mínimo fica em `FRETE_GRATIS_MINIMO` (`js/checkout.js`) e no gatilho; se mudar, mude nos dois.
+
 Até isso ser configurado, o botão de calcular frete mostra "Frete ainda não configurado no servidor" em vez de travar — e a opção de entrega local grátis em Londrina continua funcionando independente disso. O peso de cada item é uma **estimativa** (definida em `PESO_POR_ITEM` dentro da função) — ajuste os valores lá se pesar os produtos de verdade.
 
 O CEP no checkout também preenche endereço, cidade e estado automaticamente via [ViaCEP](https://viacep.com.br) (serviço público, gratuito, sem necessidade de token).
@@ -255,6 +257,7 @@ Rode `supabase/shipping_tracking.sql` no SQL Editor do Supabase. Ele adiciona:
 - Colunas em `orders`: `shipping_service_id` (serviço escolhido no SuperFrete — 1=PAC, 2=SEDEX, 17=Mini Envios, 3=Jadlog, 31=Loggi, 33=J&T; nulo = entrega própria), `recipient_document` (CPF, exigido pelo SuperFrete pra gerar etiqueta), `superfrete_label_id`, `tracking_code`, `label_print_url` — com uma `CHECK` travando `shipping_service_id` nos 6 códigos válidos (ou nulo), pra um valor adulterado no navegador nunca virar um serviço inexistente.
 - `admin_salvar_etiqueta` e `admin_get_order_envio`: só admin compra/lê os dados de envio de um pedido.
 - `confirmar_recebimento`: o próprio cliente marca o pedido como entregue (só funciona a partir de `enviado`, e só no próprio pedido) — cobre Londrina e serve de reforço se o webhook atrasar.
+- `cancelar_pedido`: o cliente cancela um pedido próprio que ainda está `pendente` (não pago). Em Minha Conta, pedido pendente mostra "Finalizar pagamento" (gera o link da InfinitePay de novo) e "Cancelar pedido". Se ele pagar um link antigo depois de cancelar, o `pagamento-webhook` volta o pedido pra `pago`.
 - Atualiza `admin_all_orders()` pra também trazer os campos de rastreio.
 
 **Pra ativar:**

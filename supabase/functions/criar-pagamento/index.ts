@@ -64,11 +64,14 @@ Deno.serve(async req => {
 
     const { data: pedido, error: erroPedido } = await clienteUsuario
       .from('orders')
-      .select('id, order_number, subtotal, recipient_name, recipient_phone')
+      .select('id, order_number, subtotal, status, recipient_name, recipient_phone')
       .eq('id', orderId)
       .single();
 
     if (erroPedido || !pedido) return erro(404, 'Pedido não encontrado.');
+    // "Finalizar pagamento" em Minha Conta chama isto pra pedidos antigos: sem
+    // essa trava, daria pra gerar cobrança de novo num pedido já pago
+    if (pedido.status !== 'pendente') return erro(409, 'Esse pedido não está mais aguardando pagamento.');
 
     const handle = Deno.env.get('INFINITEPAY_HANDLE');
     const siteUrl = Deno.env.get('SITE_URL');

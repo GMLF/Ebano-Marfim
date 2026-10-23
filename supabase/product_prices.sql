@@ -43,8 +43,13 @@ insert into public.product_prices (product_id, size, price) values
   ('lattafa-oud-mood', '3', 31), ('lattafa-oud-mood', '5', 47), ('lattafa-oud-mood', '10', 79), ('lattafa-oud-mood', 'full', 239),
   ('mykonos-california', '3', 34), ('mykonos-california', '5', 49), ('mykonos-california', '10', 84), ('mykonos-california', 'full', 259),
   ('mykonos-myego', '3', 34), ('mykonos-myego', '5', 49), ('mykonos-myego', '10', 84), ('mykonos-myego', 'full', 259),
-  ('teste-r1', 'full', 1) -- produto temporário de teste, remover a linha e o produto em data/products.js depois
+  ('teste-r1', 'full', 3) -- produto temporário de teste, remover a linha e o produto em data/products.js depois
 on conflict (product_id, size) do update set price = excluded.price;
+
+-- Frete grátis na opção mais barata a partir de R$399 em produtos (antes do
+-- desconto do Pix). O banco não sabe qual opção era a mais barata na hora da
+-- compra; quem confere isso é a comprar-etiqueta, recotando antes de pagar.
+alter table public.orders add column if not exists free_shipping boolean not null default false;
 
 -- Recalcula o subtotal de cada pedido a partir dos preços reais (product_prices),
 -- não do valor que veio do navegador. Também zera o frete quando for a
@@ -73,6 +78,8 @@ begin
     end if;
     total := total + preco * coalesce((item->>'qty')::numeric, 1);
   end loop;
+
+  new.free_shipping := total >= 399; -- antes do desconto do Pix, de propósito
 
   if new.payment_method = 'pix' then
     total := total * 0.95; -- mesmo desconto de 5% mostrado no checkout

@@ -173,10 +173,11 @@ window.PRODUCTS = [
       // produto temporário, só pra testar o fluxo de ponta a ponta (checkout
       // -> pagamento -> envio) sem gastar de verdade — remover depois do teste.
       id: 'teste-r1', brand: 'Teste', brandFilter: 'bidaya', familyFilter: 'gourmand',
-      name: '[TESTE] Produto R$1', family: 'Uso interno · não vender de verdade',
+      name: '[TESTE] Produto R$3', family: 'Uso interno · não vender de verdade',
       img: 'assets/favicon.svg',
       top: '—', heart: '—', base: '—',
-      fullSize: 1, fullPrice: 1,
+      // R$3: no Pix (5% off) ainda fica acima do mínimo de R$1 da InfinitePay
+      fullSize: 1, fullPrice: 3,
       matchNotes: []
     }
 ];

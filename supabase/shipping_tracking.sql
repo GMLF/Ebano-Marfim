@@ -9,7 +9,8 @@ alter table public.orders
   add column if not exists recipient_document text,       -- CPF do destinatário, exigido pelo SuperFrete pra gerar etiqueta
   add column if not exists superfrete_label_id text,       -- id da etiqueta no SuperFrete, usado pra casar o webhook com o pedido
   add column if not exists tracking_code text,
-  add column if not exists label_print_url text;
+  add column if not exists label_print_url text,
+  add column if not exists free_shipping boolean not null default false; -- preenchido pelo gatilho em product_prices.sql
 
 -- O carrinho/checkout.js só deveria mandar um desses 6 códigos (ou nulo,
 -- pra entrega própria) — trava aqui pra um valor inventado/adulterado no
@@ -49,7 +50,9 @@ $$;
 -- um admin ler pedido de outro usuário direto — só por uma função como
 -- esta, que confere is_admin() e devolve só o necessário pra comprar
 -- etiqueta, não o pedido inteiro).
-create or replace function public.admin_get_order_envio(pedido_id uuid)
+-- drop antes: o Postgres não deixa mudar as colunas de retorno com "create or replace".
+drop function if exists public.admin_get_order_envio(uuid);
+create function public.admin_get_order_envio(pedido_id uuid)
 returns table(
   id uuid,
   order_number text,
@@ -57,6 +60,7 @@ returns table(
   items jsonb,
   shipping_service_id integer,
   shipping_price numeric,
+  free_shipping boolean,
   recipient_name text,
   recipient_phone text,
   recipient_document text,
@@ -75,7 +79,7 @@ security definer
 set search_path = public
 as $$
   select
-    o.id, o.order_number, o.status, o.items, o.shipping_service_id, o.shipping_price,
+    o.id, o.order_number, o.status, o.items, o.shipping_service_id, o.shipping_price, o.free_shipping,
     o.recipient_name, o.recipient_phone, o.recipient_document,
     o.cep, o.street, o.number, o.neighborhood, o.city, o.state,
     o.superfrete_label_id, o.tracking_code, o.label_print_url
@@ -112,6 +116,33 @@ begin
     raise exception 'Esse pedido não está marcado como enviado.';
   end if;
   update public.orders set status = 'entregue' where id = pedido_id;
+end;
+$$;
+
+-- O cliente desiste de um pedido que ainda não pagou. Só a partir de
+-- "pendente": depois de pago, cancelamento passa a envolver estorno e fica
+-- com a loja.
+create or replace function public.cancelar_pedido(pedido_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  dono uuid;
+  status_atual text;
+begin
+  select user_id, status into dono, status_atual from public.orders where id = pedido_id;
+  if dono is null then
+    raise exception 'Pedido não encontrado.';
+  end if;
+  if auth.uid() is null or dono is distinct from auth.uid() then
+    raise exception 'Você só pode cancelar seus próprios pedidos.';
+  end if;
+  if status_atual != 'pendente' then
+    raise exception 'Só dá pra cancelar pedidos que ainda não foram pagos. Fale com a gente pelo WhatsApp.';
+  end if;
+  update public.orders set status = 'cancelado' where id = pedido_id;
 end;
 $$;
 

@@ -218,6 +218,7 @@
   // entrega feita por vocês mesmos, sem transportadora — só aparece pra quem mora em Londrina
   // (sem id: não existe serviço real do SuperFrete por trás, não dá pra comprar etiqueta disso)
   const ENTREGA_LOCAL = { id: null, transportadora: 'Entrega própria', servico: 'Entrega local em Londrina', preco: 0, dias: 1 };
+  const FRETE_GRATIS_MINIMO = 399; // em perfumes, antes do desconto do Pix (mesma regra do gatilho no banco)
   function ehLondrina(cidade) {
     return cidade.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim() === 'londrina';
   }
@@ -234,10 +235,21 @@
 
     const cidade = document.getElementById('ckCity').value || '';
     const opcoes = ehLondrina(cidade) ? [ENTREGA_LOCAL] : [];
+    let temTransportadora = false;
 
     if (window.emAuth && window.emAuth.isConfigured) {
       const result = await window.emAuth.calcularFrete(cep, cart.map(i => ({ qty: i.qty })));
-      if (!result.error && result.opcoes) opcoes.push(...result.opcoes);
+      if (!result.error && result.opcoes && result.opcoes.length) {
+        const transportadoras = result.opcoes.map(op => ({ ...op }));
+        // calcular-frete já devolve do mais barato pro mais caro; o banco marca o
+        // pedido como frete grátis e a comprar-etiqueta confere se era mesmo o mais barato
+        if (subtotal >= FRETE_GRATIS_MINIMO) {
+          transportadoras[0].precoOriginal = transportadoras[0].preco;
+          transportadoras[0].preco = 0;
+        }
+        opcoes.push(...transportadoras);
+        temTransportadora = true;
+      }
     }
 
     calcFreteBtn.disabled = false;
@@ -255,9 +267,15 @@
           <b>${op.servico}</b>
           <span class="frete-option-meta">${op.transportadora} · até ${op.dias} dia(s) úteis</span>
         </span>
-        <span class="frete-price${op.preco === 0 ? ' is-gratis' : ''}">${op.preco > 0 ? fmt(op.preco) : 'Grátis'}</span>
+        <span class="frete-price${op.preco === 0 ? ' is-gratis' : ''}">${op.precoOriginal ? `<s>${fmt(op.precoOriginal)}</s> ` : ''}${op.preco > 0 ? fmt(op.preco) : 'Grátis'}</span>
       </label>
     `).join('');
+    if (temTransportadora) {
+      const faltam = FRETE_GRATIS_MINIMO - subtotal;
+      freteOpcoesEl.insertAdjacentHTML('beforeend', faltam > 0
+        ? `<p class="frete-gratis-hint">Faltam ${fmt(faltam)} em perfumes pra ganhar frete grátis na opção mais barata.</p>`
+        : `<p class="frete-gratis-hint is-ok">Frete grátis na opção mais barata: sua seleção passou de ${fmt(FRETE_GRATIS_MINIMO)}.</p>`);
+    }
 
     function selecionarFrete(i) {
       const op = opcoes[i];

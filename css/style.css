@@ -1195,23 +1195,72 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 .btn-google:hover{ border-color:var(--accent); box-shadow:0 6px 16px -8px rgba(0,0,0,.25); transform:translateY(-1px); }
 .btn-google svg{ width:18px; height:18px; }
-.account-view{ display:none; flex-direction:column; gap:22px; text-align:center; }
-.account-view.active{ display:flex; }
-.account-view .avatar{
-  width:64px; height:64px; border-radius:50%; margin:0 auto;
-  background:var(--surface-2); display:grid; place-items:center;
-  font-family:var(--font-display); font-style:italic; font-size:1.4rem; color:var(--accent);
+/* ---------- Minha Conta (logado): página própria, não o quadro de login ---------- */
+.account-page{ max-width:880px; }
+.account-hero{
+  display:flex; align-items:center; gap:24px; flex-wrap:wrap;
+  padding-bottom:32px; margin-bottom:40px; border-bottom:1px solid var(--line);
 }
-.account-view .account-email{ font-size:.92rem; color:var(--text-dim); }
-.account-view .account-orders{ text-align:left; border-top:1px solid var(--line); padding-top:18px; color:var(--text-faint); font-size:.88rem; }
-.order-history-item{
-  border:1px solid var(--line); border-radius:6px;
-  padding:14px 16px; margin-bottom:10px;
-  display:flex; flex-direction:column; gap:8px;
+.account-hero .avatar{
+  width:76px; height:76px; border-radius:50%; flex-shrink:0;
+  background:var(--surface-2); border:1px solid var(--line-strong);
+  display:grid; place-items:center;
+  font-family:var(--font-display); font-style:italic; font-size:1.7rem; color:var(--accent);
 }
-.order-history-head{ display:flex; justify-content:space-between; font-family:var(--font-display); color:var(--text); font-size:.95rem; }
-.order-history-body{ display:flex; flex-direction:column; gap:3px; font-size:.82rem; }
-.order-history-foot{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:.82rem; border-top:1px solid var(--line); padding-top:8px; color:var(--text); }
+.account-hero-text{ flex:1; min-width:200px; }
+.account-hero-text h2{ margin:10px 0 4px; }
+.account-email{ font-size:.92rem; color:var(--text-dim); margin:0; overflow-wrap:anywhere; }
+.account-hero-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.account-orders-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.account-orders-head h3{ margin:0; font-size:1.35rem; }
+.account-orders-count{ font-size:.82rem; color:var(--text-faint); letter-spacing:.06em; text-transform:uppercase; }
+.account-orders-list{ display:flex; flex-direction:column; gap:18px; }
+.account-empty{ color:var(--text-dim); font-size:.92rem; }
+.account-empty a{ color:var(--accent); }
+
+.order-card{
+  background:linear-gradient(165deg, var(--surface) 0%, var(--surface-2) 100%);
+  border:1px solid var(--line); border-radius:12px;
+  padding:clamp(20px,3vw,28px);
+  display:flex; flex-direction:column; gap:18px;
+}
+.order-card-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.order-card-number{ display:block; font-family:var(--font-display); font-size:1.2rem; color:var(--text); }
+.order-card-date{ display:block; font-size:.82rem; color:var(--text-faint); margin-top:4px; }
+.order-card-items{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+.order-card-items li{
+  display:grid; grid-template-columns:48px 1fr; grid-template-rows:auto auto;
+  column-gap:14px; align-items:center;
+}
+.order-card-items img{
+  grid-row:1 / span 2; width:48px; height:48px; object-fit:contain;
+  background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:4px;
+}
+.order-item-name{ color:var(--text); font-size:.92rem; align-self:end; }
+.order-item-meta{ color:var(--text-faint); font-size:.8rem; align-self:start; }
+.order-card-summary{
+  display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  font-size:.86rem; color:var(--text-dim);
+  border-top:1px solid var(--line); padding-top:14px;
+}
+.order-card-summary b{ color:var(--text); font-weight:600; }
+.checkout-steps.order-card-tracker{ margin:0; }
+.order-card-note{ margin:0; font-size:.88rem; color:var(--text-dim); }
+.order-card-note b{ color:var(--text); letter-spacing:.04em; }
+.order-card-pending{
+  display:flex; flex-direction:column; gap:14px;
+  background:var(--accent-soft); border-radius:8px; padding:16px 18px;
+}
+.order-card-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.frete-gratis-hint{ margin:10px 0 0; font-size:.82rem; color:var(--text-faint); }
+.frete-gratis-hint.is-ok{ color:var(--accent); }
+.frete-price s{ opacity:.6; font-weight:400; margin-right:4px; }
+@media (max-width:600px){
+  .account-hero{ gap:16px; }
+  .account-hero .avatar{ width:60px; height:60px; font-size:1.4rem; }
+  .account-hero-actions{ width:100%; }
+  .order-card-head{ flex-direction:column; }
+}
 .status-badge{
   font-size:.82rem; text-transform:uppercase; letter-spacing:.05em; font-weight:600;
   padding:4px 10px; border-radius:999px; white-space:nowrap;
